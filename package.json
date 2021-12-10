@@ -4,7 +4,8 @@
   "description": "Shared modules &amp; adapters for EPAS components",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "ts-node node_modules/jasmine/bin/jasmine",
+    "build": "tsc -p tsconfig-build.json"
   },
   "repository": {
     "type": "git",
@@ -23,8 +24,11 @@
   },
   "dependencies": {
     "@aws-sdk/client-sqs": "^3.42.0",
-    "winston": "^3.3.3",
-    "@types/node": "^16.6.1"
+    "@types/jasmine": "^3.10.2",
+    "@types/node": "^16.6.1",
+    "jasmine": "^3.10.0",
+    "jasmine-ts": "^0.4.0",
+    "winston": "^3.3.3"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com/@eyevinn"

@@ -1,1 +1,1 @@
-export * as SqsQueueAdapter from './adapters/SqsQueueAdapter';
+export * from './adapters/SqsQueueAdapter';
