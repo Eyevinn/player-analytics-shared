@@ -1,0 +1,1 @@
+export * as SqsQueueAdapter from './adapters/SqsQueueAdapter';
