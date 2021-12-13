@@ -1,6 +1,6 @@
 {
   "name": "@eyevinn/player-analytics-shared",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Shared modules &amp; adapters for EPAS components",
   "main": "index.js",
   "scripts": {
