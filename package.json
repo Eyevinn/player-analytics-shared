@@ -1,0 +1,36 @@
+{
+  "name": "player-analytics-shared",
+  "version": "0.0.1",
+  "description": "Shared modules &amp; adapters for EPAS components",
+  "main": "index.js",
+  "scripts": {
+    "test": "ts-node node_modules/jasmine/bin/jasmine",
+    "build": "tsc -p tsconfig-build.json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Eyevinn/player-analytics-shared.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Eyevinn/player-analytics-shared/issues"
+  },
+  "homepage": "https://github.com/Eyevinn/player-analytics-shared#readme",
+  "devDependencies": {
+    "eslint": "^6.1.3",
+    "ts-node": "^10.4.0",
+    "typescript": "^4.3.5"
+  },
+  "dependencies": {
+    "@aws-sdk/client-sqs": "^3.42.0",
+    "@types/jasmine": "^3.10.2",
+    "@types/node": "^16.6.1",
+    "jasmine": "^3.10.0",
+    "jasmine-ts": "^0.4.0",
+    "winston": "^3.3.3"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/@eyevinn"
+  }
+}
