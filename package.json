@@ -1,5 +1,5 @@
 {
-  "name": "player-analytics-shared",
+  "name": "@eyevinn/player-analytics-shared",
   "version": "0.0.1",
   "description": "Shared modules &amp; adapters for EPAS components",
   "main": "index.js",
