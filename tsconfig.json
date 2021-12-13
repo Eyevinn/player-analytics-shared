@@ -8,6 +8,7 @@
     "outDir": "build",
     "resolveJsonModule": true,
     "strictNullChecks": true,
+    "declaration": true,
     "declarationDir": "build/types"
   },
   "lib": ["es2015"],
