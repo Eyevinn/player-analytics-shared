@@ -31,6 +31,6 @@
     "winston": "^3.3.3"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com/@eyevinn"
+    "@eyevinn:registry": "https://npm.pkg.github.com"
   }
 }
