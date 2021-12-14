@@ -35,7 +35,7 @@ describe("SQS Queue Adapter", () => {
   it("should not read from queue if sqs queue env is not set", async () => {
     process.env.SQS_QUEUE_URL = undefined;
     const queueAdapter = new SqsQueueAdapter(Logger);
-    let result = await queueAdapter.readFromQueue();
+    let result = await queueAdapter.pullFromQueue();
     expect(result).toEqual({ message: "SQS_QUEUE_URL is undefined" });
   });
   it("should not remove from queue if sqs queue env is not set", async () => {
@@ -75,7 +75,7 @@ describe("SQS Queue Adapter", () => {
   it("should not read from queue if AWS region env is not set", async () => {
     process.env.AWS_REGION = undefined;
     const queueAdapter = new SqsQueueAdapter(Logger);
-    let result = await queueAdapter.readFromQueue();
+    let result = await queueAdapter.pullFromQueue();
     expect(result).toEqual({ message: "AWS_REGION is undefined" });
   });
   it("should not remove from queue if AWS region env is not set", async () => {
@@ -142,7 +142,7 @@ describe("SQS Queue Adapter", () => {
     sqsMock.on(DeleteMessageCommand).resolves(errMsg);
     const queueAdapter = new SqsQueueAdapter(Logger);
     let pushResult = await queueAdapter.pushToQueue(mockEvent);
-    let readResult = await queueAdapter.readFromQueue();
+    let readResult = await queueAdapter.pullFromQueue();
     let removeResult = await queueAdapter.removeFromQueue(mockSQSMessage);
     expect(pushResult).toEqual(errMsg);
     expect(readResult).toEqual(errMsg);
