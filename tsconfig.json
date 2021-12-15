@@ -7,9 +7,7 @@
     "sourceMap": true,
     "outDir": "build",
     "resolveJsonModule": true,
-    "strictNullChecks": true,
-    "declaration": true,
-    "declarationDir": "build/types"
+    "strictNullChecks": true
   },
   "lib": ["es2015"],
   "exclude": [

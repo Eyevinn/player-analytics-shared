@@ -51,12 +51,12 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
       );
       return sendMessageResult;
     } catch (err) {
-      this.logger.error(JSON.stringify(err));
+      this.logger.error(err);
       return err;
     }
   }
 
-  async pullFromQueue() {
+  async pullFromQueue(): Promise<any[] | Object> {
     if (process.env.SQS_QUEUE_URL === "undefined") {
       return { message: "SQS_QUEUE_URL is undefined" };
     }
@@ -65,6 +65,9 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
     }
     const params: ReceiveMessageCommandInput = {
       QueueUrl: process.env.SQS_QUEUE_URL,
+      MaxNumberOfMessages: 10,
+      MessageAttributeNames: ["All"],
+      WaitTimeSeconds: 20,
     };
     const recieveMessageCommand = new ReceiveMessageCommand(params);
     try {
@@ -72,11 +75,18 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
         recieveMessageCommand
       );
       this.logger.info(
-        `Reserved Messages From SQS Count: ${recieveMessageResult.Messages?.length}`
+        `Reserved Messages From SQS Count: ${
+          recieveMessageResult.Messages
+            ? recieveMessageResult.Messages.length
+            : 0
+        }`
       );
-      return recieveMessageResult;
+      if (!recieveMessageResult.Messages) {
+        return [];
+      }
+      return recieveMessageResult.Messages;
     } catch (err) {
-      this.logger.error(JSON.stringify(err));
+      this.logger.error(err);
       return err;
     }
   }
@@ -102,5 +112,9 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
       this.logger.error(JSON.stringify(err));
       return err;
     }
+  }
+
+  getEventJSONsFromMessages(messages: Message[]): any[] {
+    return messages.map((item) => (item.Body ? JSON.parse(item.Body) : {}));
   }
 }
