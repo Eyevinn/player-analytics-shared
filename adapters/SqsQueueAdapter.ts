@@ -16,16 +16,18 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
   client: SQSClient;
 
   constructor(logger: winston.Logger) {
-    this.client = new SQSClient({ region: process.env.AWS_REGION });
     this.logger = logger;
+    let region = process.env.QUEUE_REGION;
+    if (region === 'undefined') {
+      region = process.env.AWS_REGION;
+    }
+    this.logger.info(`SQS Region: ${region}`);
+    this.client = new SQSClient({ region: region });
   }
 
   async pushToQueue(event: Object): Promise<any> {
     if (process.env.SQS_QUEUE_URL === 'undefined') {
       return { message: 'SQS_QUEUE_URL is undefined' };
-    }
-    if (process.env.AWS_REGION === 'undefined') {
-      return { message: 'AWS_REGION is undefined' };
     }
     const params: SendMessageCommandInput = {
       MessageAttributes: {
@@ -59,9 +61,6 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
   async pullFromQueue(): Promise<any> {
     if (process.env.SQS_QUEUE_URL === 'undefined') {
       return { message: 'SQS_QUEUE_URL is undefined' };
-    }
-    if (process.env.AWS_REGION === 'undefined') {
-      return { message: 'AWS_REGION is undefined' };
     }
     let maxMessages: number = 10;
     if (typeof process.env.SQS_MAX_MESSAGES === 'number') {
@@ -98,12 +97,10 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
       return err;
     }
   }
+
   async removeFromQueue(queueMsg: Message) {
     if (process.env.SQS_QUEUE_URL === 'undefined') {
       return { message: 'SQS_QUEUE_URL is undefined' };
-    }
-    if (process.env.AWS_REGION === 'undefined') {
-      return { message: 'AWS_REGION is undefined' };
     }
     const params: DeleteMessageCommandInput = {
       QueueUrl: process.env.SQS_QUEUE_URL,
