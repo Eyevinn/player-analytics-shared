@@ -1,34 +1,24 @@
 name: Node.js Package
-
 on:
   release:
     types: [created]
-
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
-        with:
-          node-version: 12
-      - run: npm ci
-      - run: npm install
-      - run: npm run build --if-present
-      - run: npm test
-
   publish-gpr:
-    needs: build
     runs-on: ubuntu-latest
     permissions:
       packages: write
       contents: read
+    strategy:
+      matrix:
+        node-version: [14.x]
     steps:
       - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
       - uses: actions/setup-node@v2
         with:
-          node-version: 12
+          node-version: ${{ matrix.node-version }}
           registry-url: https://npm.pkg.github.com/
+      - name: Install dependencies, run tests and publish
         run: |
           npm ci
           npm install
