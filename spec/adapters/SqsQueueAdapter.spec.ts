@@ -14,11 +14,17 @@ const sqsMock = mockClient(SQSClient);
 describe('SQS Queue Adapter', () => {
   beforeEach(() => {
     process.env.AWS_REGION = 'us-east-1';
-    process.env.QUEUE_REGION = undefined;
     process.env.QUEUE_TYPE = 'SQS';
     process.env.SQS_QUEUE_URL =
       'https://sqs.us-east-1.amazonaws.com/1234/test-queue';
     sqsMock.reset();
+  });
+
+  afterEach(() => {
+    delete process.env.AWS_REGION;
+    delete process.env.QUEUE_TYPE;
+    delete process.env.QUEUE_REGION;
+    delete process.env.SQS_QUEUE_URL;
   });
 
   it('should push to queue if default env is set', async () => {
