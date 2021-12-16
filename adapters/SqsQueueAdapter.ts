@@ -2,6 +2,11 @@ import {
   SQSClient,
   SendMessageCommand,
   SendMessageCommandInput,
+  ReceiveMessageCommandInput,
+  ReceiveMessageCommand,
+  DeleteMessageCommandInput,
+  Message,
+  DeleteMessageCommand,
 } from '@aws-sdk/client-sqs';
 import { AbstractQueueAdapter } from '../types/interfaces';
 import winston from 'winston';
@@ -41,11 +46,83 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
     const sendMessageCommand = new SendMessageCommand(params);
     try {
       const sendMessageResult = await this.client.send(sendMessageCommand);
-      this.logger.info(`Response from SQS: ${JSON.stringify(sendMessageResult)}`);
+      this.logger.info(
+        `Response from SQS: ${JSON.stringify(sendMessageResult)}`
+      );
       return sendMessageResult;
+    } catch (err) {
+      this.logger.error(err);
+      return err;
+    }
+  }
+
+  async pullFromQueue(): Promise<any> {
+    if (process.env.SQS_QUEUE_URL === 'undefined') {
+      return { message: 'SQS_QUEUE_URL is undefined' };
+    }
+    if (process.env.AWS_REGION === 'undefined') {
+      return { message: 'AWS_REGION is undefined' };
+    }
+    let maxMessages: number = 10;
+    if (typeof process.env.SQS_MAX_MESSAGES === 'number') {
+      maxMessages = process.env.SQS_MAX_MESSAGES;
+    }
+    let waitTime: number = 20;
+    if (typeof process.env.SQS_WAIT_TIME === 'number') {
+      waitTime = process.env.SQS_WAIT_TIME;
+    }
+    const params: ReceiveMessageCommandInput = {
+      QueueUrl: process.env.SQS_QUEUE_URL,
+      MaxNumberOfMessages: maxMessages,
+      MessageAttributeNames: ['All'],
+      WaitTimeSeconds: waitTime,
+    };
+    const receiveMessageCommand = new ReceiveMessageCommand(params);
+    try {
+      const receiveMessageResult = await this.client.send(
+        receiveMessageCommand
+      );
+      this.logger.info(
+        `Reserved Messages From SQS Count: ${
+          receiveMessageResult.Messages
+            ? receiveMessageResult.Messages.length
+            : 0
+        }`
+      );
+      if (!receiveMessageResult.Messages) {
+        return [];
+      }
+      return receiveMessageResult.Messages;
+    } catch (err) {
+      this.logger.error(err);
+      return err;
+    }
+  }
+  async removeFromQueue(queueMsg: Message) {
+    if (process.env.SQS_QUEUE_URL === 'undefined') {
+      return { message: 'SQS_QUEUE_URL is undefined' };
+    }
+    if (process.env.AWS_REGION === 'undefined') {
+      return { message: 'AWS_REGION is undefined' };
+    }
+    const params: DeleteMessageCommandInput = {
+      QueueUrl: process.env.SQS_QUEUE_URL,
+      ReceiptHandle: queueMsg.ReceiptHandle,
+    };
+    const deleteMessageCommand = new DeleteMessageCommand(params);
+    try {
+      const deleteMessageResult = await this.client.send(deleteMessageCommand);
+      this.logger.info(
+        `Response from SQS: ${JSON.stringify(deleteMessageResult)}`
+      );
+      return deleteMessageResult;
     } catch (err) {
       this.logger.error(JSON.stringify(err));
       return err;
     }
+  }
+
+  getEventJSONsFromMessages(messages: Message[]): any[] {
+    return messages.map((item) => (item.Body ? JSON.parse(item.Body) : {}));
   }
 }

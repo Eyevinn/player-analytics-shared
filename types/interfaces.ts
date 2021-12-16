@@ -11,4 +11,6 @@ export abstract class AbstractQueueAdapter {
   logger: winston.Logger;
   client: any;
   abstract pushToQueue(body: Object): Promise<Object>;
+  abstract pullFromQueue(body: Object): Promise<Object>;
+  abstract removeFromQueue(body: Object): Promise<Object>;
 }
