@@ -143,8 +143,8 @@ describe('SQS Queue Adapter', () => {
     let pushResult = await queueAdapter.pushToQueue(mockEvent);
     let readResult = await queueAdapter.pullFromQueue();
     let removeResult = await queueAdapter.removeFromQueue(mockSQSMessage);
-    expect(pushResult).toEqual(errMsg);
-    expect(readResult).toEqual(errMsg);
-    expect(removeResult).toEqual(errMsg);
+    expect(pushResult.toString()).toEqual(errMsg.Code);
+    expect(readResult.toString()).toEqual(errMsg.Code);
+    expect(removeResult.toString()).toEqual(errMsg.Code);
   });
 });

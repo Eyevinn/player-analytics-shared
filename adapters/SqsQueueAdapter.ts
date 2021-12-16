@@ -56,7 +56,7 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
     }
   }
 
-  async pullFromQueue(): Promise<any[] | Object> {
+  async pullFromQueue(): Promise<any> {
     if (process.env.SQS_QUEUE_URL === 'undefined') {
       return { message: 'SQS_QUEUE_URL is undefined' };
     }
