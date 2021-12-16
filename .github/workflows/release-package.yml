@@ -12,18 +12,17 @@ jobs:
       matrix:
         node-version: [14.x]
     steps:
+      - name: Install dependencies, run tests and publish
       - uses: actions/checkout@v2
-      - name: Use Node.js ${{ matrix.node-version }}
       - uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node-version }}
           registry-url: https://npm.pkg.github.com/
-      - name: Install dependencies, run tests and publish
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
         run: |
           npm ci
           npm install
           npm run build --if-present
           npm test
           npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
