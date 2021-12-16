@@ -7,9 +7,9 @@ import {
   DeleteMessageCommandInput,
   Message,
   DeleteMessageCommand,
-} from "@aws-sdk/client-sqs";
-import { AbstractQueueAdapter } from "../types/interfaces";
-import winston from "winston";
+} from '@aws-sdk/client-sqs';
+import { AbstractQueueAdapter } from '../types/interfaces';
+import winston from 'winston';
 
 export class SqsQueueAdapter implements AbstractQueueAdapter {
   logger: winston.Logger;
@@ -21,22 +21,22 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
   }
 
   async pushToQueue(event: Object): Promise<any> {
-    if (process.env.SQS_QUEUE_URL === "undefined") {
-      return { message: "SQS_QUEUE_URL is undefined" };
+    if (process.env.SQS_QUEUE_URL === 'undefined') {
+      return { message: 'SQS_QUEUE_URL is undefined' };
     }
-    if (process.env.AWS_REGION === "undefined") {
-      return { message: "AWS_REGION is undefined" };
+    if (process.env.AWS_REGION === 'undefined') {
+      return { message: 'AWS_REGION is undefined' };
     }
     const params: SendMessageCommandInput = {
       MessageAttributes: {
         Event: {
-          DataType: "String",
-          StringValue: event["event"],
+          DataType: 'String',
+          StringValue: event['event'],
         },
         Time: {
-          DataType: "String",
-          StringValue: event["timestamp"]
-            ? event["timestamp"]
+          DataType: 'String',
+          StringValue: event['timestamp']
+            ? event['timestamp']
             : new Date().toISOString(),
         },
       },
@@ -57,45 +57,53 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
   }
 
   async pullFromQueue(): Promise<any[] | Object> {
-    if (process.env.SQS_QUEUE_URL === "undefined") {
-      return { message: "SQS_QUEUE_URL is undefined" };
+    if (process.env.SQS_QUEUE_URL === 'undefined') {
+      return { message: 'SQS_QUEUE_URL is undefined' };
     }
-    if (process.env.AWS_REGION === "undefined") {
-      return { message: "AWS_REGION is undefined" };
+    if (process.env.AWS_REGION === 'undefined') {
+      return { message: 'AWS_REGION is undefined' };
+    }
+    let maxMessages: number = 10;
+    if (typeof process.env.SQS_MAX_MESSAGES === 'number') {
+      maxMessages = process.env.SQS_MAX_MESSAGES;
+    }
+    let waitTime: number = 20;
+    if (typeof process.env.SQS_WAIT_TIME === 'number') {
+      waitTime = process.env.SQS_WAIT_TIME;
     }
     const params: ReceiveMessageCommandInput = {
       QueueUrl: process.env.SQS_QUEUE_URL,
-      MaxNumberOfMessages: 10,
-      MessageAttributeNames: ["All"],
-      WaitTimeSeconds: 20,
+      MaxNumberOfMessages: maxMessages,
+      MessageAttributeNames: ['All'],
+      WaitTimeSeconds: waitTime,
     };
-    const recieveMessageCommand = new ReceiveMessageCommand(params);
+    const receiveMessageCommand = new ReceiveMessageCommand(params);
     try {
-      const recieveMessageResult = await this.client.send(
-        recieveMessageCommand
+      const receiveMessageResult = await this.client.send(
+        receiveMessageCommand
       );
       this.logger.info(
         `Reserved Messages From SQS Count: ${
-          recieveMessageResult.Messages
-            ? recieveMessageResult.Messages.length
+          receiveMessageResult.Messages
+            ? receiveMessageResult.Messages.length
             : 0
         }`
       );
-      if (!recieveMessageResult.Messages) {
+      if (!receiveMessageResult.Messages) {
         return [];
       }
-      return recieveMessageResult.Messages;
+      return receiveMessageResult.Messages;
     } catch (err) {
       this.logger.error(err);
       return err;
     }
   }
   async removeFromQueue(queueMsg: Message) {
-    if (process.env.SQS_QUEUE_URL === "undefined") {
-      return { message: "SQS_QUEUE_URL is undefined" };
+    if (process.env.SQS_QUEUE_URL === 'undefined') {
+      return { message: 'SQS_QUEUE_URL is undefined' };
     }
-    if (process.env.AWS_REGION === "undefined") {
-      return { message: "AWS_REGION is undefined" };
+    if (process.env.AWS_REGION === 'undefined') {
+      return { message: 'AWS_REGION is undefined' };
     }
     const params: DeleteMessageCommandInput = {
       QueueUrl: process.env.SQS_QUEUE_URL,
