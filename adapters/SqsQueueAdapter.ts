@@ -16,13 +16,13 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
   client: SQSClient;
 
   constructor(logger: winston.Logger) {
+    this.logger = logger;
     let region = process.env.QUEUE_REGION;
     if (region === 'undefined') {
       region = process.env.AWS_REGION;
     }
-    logger.info(`SQS Region: ${region}`);
+    this.logger.info(`SQS Region: ${region}`);
     this.client = new SQSClient({ region: region });
-    this.logger = logger;
   }
 
   async pushToQueue(event: Object): Promise<any> {
