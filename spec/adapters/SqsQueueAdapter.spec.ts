@@ -6,7 +6,7 @@ import {
   SQSClient,
 } from '@aws-sdk/client-sqs';
 import { AwsError, mockClient } from 'aws-sdk-client-mock';
-import { SqsQueueAdapter } from '../..';
+import { SqsQueueAdapter } from '../../adapters/SqsQueueAdapter';
 import Logger from '../../util/logger';
 
 const sqsMock = mockClient(SQSClient);
@@ -14,6 +14,7 @@ const sqsMock = mockClient(SQSClient);
 describe('SQS Queue Adapter', () => {
   beforeEach(() => {
     process.env.AWS_REGION = 'us-east-1';
+    process.env.QUEUE_REGION = undefined;
     process.env.QUEUE_TYPE = 'SQS';
     process.env.SQS_QUEUE_URL =
       'https://sqs.us-east-1.amazonaws.com/1234/test-queue';
@@ -34,8 +35,9 @@ describe('SQS Queue Adapter', () => {
     expect(result).toEqual(sqsResp);
   });
 
-  it('should push to queue if QUEUE_REGION env is set', async () => {
+  it('should push to queue if QUEUE_REGION env is set and AWS_REGION is undefined', async () => {
     process.env.QUEUE_REGION = 'eu-north-1';
+    process.env.AWS_REGION = undefined;
     const sqsResp = { MessageId: '12345678-4444-5555-6666-111122223333' };
     const adapter = new SqsQueueAdapter(Logger);
     const event = {
