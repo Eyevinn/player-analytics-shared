@@ -20,7 +20,22 @@ describe('SQS Queue Adapter', () => {
     sqsMock.reset();
   });
 
-  it('should push to queue', async () => {
+  it('should push to queue if default env is set', async () => {
+    const sqsResp = { MessageId: '12345678-4444-5555-6666-111122223333' };
+    const adapter = new SqsQueueAdapter(Logger);
+    const event = {
+      event: 'loading',
+      timestamp: 0,
+      playhead: 0,
+      duration: 0,
+    };
+    sqsMock.on(SendMessageCommand).resolves(sqsResp);
+    const result = await adapter.pushToQueue(event);
+    expect(result).toEqual(sqsResp);
+  });
+
+  it('should push to queue if QUEUE_REGION env is set', async () => {
+    process.env.QUEUE_REGION = 'eu-north-1';
     const sqsResp = { MessageId: '12345678-4444-5555-6666-111122223333' };
     const adapter = new SqsQueueAdapter(Logger);
     const event = {
