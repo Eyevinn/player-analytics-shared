@@ -32,12 +32,14 @@ describe('SQS Queue Adapter', () => {
     let result = await queueAdapter.pushToQueue(mockEvent);
     expect(result).toEqual({ message: 'SQS_QUEUE_URL is undefined' });
   });
+
   it('should not read from queue if sqs queue env is not set', async () => {
     process.env.SQS_QUEUE_URL = undefined;
     const queueAdapter = new SqsQueueAdapter(Logger);
     let result = await queueAdapter.pullFromQueue();
     expect(result).toEqual({ message: 'SQS_QUEUE_URL is undefined' });
   });
+
   it('should not remove from queue if sqs queue env is not set', async () => {
     process.env.SQS_QUEUE_URL = undefined;
     const queueAdapter = new SqsQueueAdapter(Logger);
@@ -60,6 +62,7 @@ describe('SQS Queue Adapter', () => {
     let result = await queueAdapter.removeFromQueue(mockSQSMessage);
     expect(result).toEqual({ message: 'SQS_QUEUE_URL is undefined' });
   });
+
   it('should not push to queue if AWS region env is not set', async () => {
     process.env.AWS_REGION = undefined;
     const queueAdapter = new SqsQueueAdapter(Logger);
@@ -72,12 +75,14 @@ describe('SQS Queue Adapter', () => {
     let result = await queueAdapter.pushToQueue(mockEvent);
     expect(result).toEqual({ message: 'AWS_REGION is undefined' });
   });
+
   it('should not read from queue if AWS region env is not set', async () => {
     process.env.AWS_REGION = undefined;
     const queueAdapter = new SqsQueueAdapter(Logger);
     let result = await queueAdapter.pullFromQueue();
     expect(result).toEqual({ message: 'AWS_REGION is undefined' });
   });
+
   it('should not remove from queue if AWS region env is not set', async () => {
     process.env.AWS_REGION = undefined;
     const queueAdapter = new SqsQueueAdapter(Logger);
