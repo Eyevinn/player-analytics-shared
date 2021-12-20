@@ -12,7 +12,7 @@ import {
   DeleteItemCommandOutput,
 } from '@aws-sdk/client-dynamodb';
 import { AwsError, mockClient } from 'aws-sdk-client-mock';
-import { DynamoDBAdapter } from '../../adapters/DynamoDBAdapter';
+import { DynamoDBAdapter } from '../../adapters/db/DynamoDBAdapter';
 import { ErrorType } from '../../types/interfaces';
 import Logger from '../../util/logger';
 

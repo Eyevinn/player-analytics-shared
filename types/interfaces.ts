@@ -37,10 +37,10 @@ export abstract class AbstractDBAdapter {
   dbClient: any;
 
   abstract getTableNames(): Promise<string[]>;
-  abstract createTable(name: string): Promise<void>;
-  abstract putItem(params: Object): Promise<void>;
+  abstract createTable(name: string): Promise<any>;
+  abstract putItem(params: Object): Promise<any>;
   abstract getItem(params: Object): Promise<any>;
-  abstract deleteItem(params: Object): Promise<void>;
+  abstract deleteItem(params: Object): Promise<any>;
   abstract getItemsBySession(params: Object): Promise<any>;
   abstract handleError(error: any): IHandleErrorOutput;
 }

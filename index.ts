@@ -1,1 +1,2 @@
-export * from './adapters/SqsQueueAdapter';
+export * from './adapters/queue/SqsQueueAdapter';
+export * from './adapters/db/DynamoDBAdapter';

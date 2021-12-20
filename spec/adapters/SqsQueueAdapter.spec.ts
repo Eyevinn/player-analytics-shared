@@ -6,7 +6,7 @@ import {
   SQSClient,
 } from '@aws-sdk/client-sqs';
 import { AwsError, mockClient } from 'aws-sdk-client-mock';
-import { SqsQueueAdapter } from '../../adapters/SqsQueueAdapter';
+import { SqsQueueAdapter } from '../../adapters/queue/SqsQueueAdapter';
 import Logger from '../../util/logger';
 
 const sqsMock = mockClient(SQSClient);
