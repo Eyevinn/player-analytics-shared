@@ -160,8 +160,8 @@ describe('Dynamo DB Adapter', () => {
     };
     const adapter = new DynamoDBAdapter(Logger);
     const mockEventId = '123-123-123-123';
-    ddbMock.on(GetItemCommand).resolves(DDBReply);
-    const result = await adapter.getItem({
+    ddbMock.on(DeleteItemCommand).resolves(DDBReply);
+    const result = await adapter.deleteItem({
       tableName: 'table_1',
       eventId: mockEventId,
     });
