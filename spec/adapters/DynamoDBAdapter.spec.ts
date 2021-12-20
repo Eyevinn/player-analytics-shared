@@ -20,13 +20,7 @@ const ddbMock = mockClient(DynamoDBClient);
 describe('Dynamo DB Adapter', () => {
   beforeEach(() => {
     process.env.AWS_REGION = 'us-east-1';
-    process.env.DB_TYPE = 'SQS';
     ddbMock.reset();
-  });
-
-  afterEach(() => {
-    delete process.env.AWS_REGION;
-    delete process.env.DB_TYPE;
   });
 
   it('should return list of table names in database', async () => {
