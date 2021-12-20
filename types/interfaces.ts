@@ -8,8 +8,8 @@ export interface EventValidator {
 }
 
 export enum ErrorType {
-  'abort' = 0,
-  'continue' = 1,
+  'ABORT' = 0,
+  'CONTINUE' = 1,
 }
 export interface IHandleErrorOutput {
   errorType: ErrorType;

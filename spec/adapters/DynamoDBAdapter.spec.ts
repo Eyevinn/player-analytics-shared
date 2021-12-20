@@ -13,6 +13,7 @@ import {
 } from '@aws-sdk/client-dynamodb';
 import { AwsError, mockClient } from 'aws-sdk-client-mock';
 import { DynamoDBAdapter } from '../../adapters/DynamoDBAdapter';
+import { ErrorType } from '../../types/interfaces';
 import Logger from '../../util/logger';
 
 const ddbMock = mockClient(DynamoDBClient);
@@ -98,7 +99,7 @@ describe('Dynamo DB Adapter', () => {
         data: mockEvent,
       });
     } catch (err) {
-      expect(err.errorType).toEqual('continue');
+      expect(err.errorType).toEqual(ErrorType.CONTINUE);
       expect(err.error.Code).toEqual('ResourceNotFoundException');
     }
   });
@@ -131,7 +132,7 @@ describe('Dynamo DB Adapter', () => {
         data: mockEvent,
       });
     } catch (err) {
-      expect(err.errorType).toEqual('abort');
+      expect(err.errorType).toEqual(ErrorType.ABORT);
       expect(err.error.Code).toEqual('RequestLimitExceeded');
     }
   });
