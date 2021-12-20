@@ -137,18 +137,18 @@ export class DynamoDBAdapter implements AbstractDBAdapter {
 
   handleError(errorObject: any): IHandleErrorOutput {
     this.logger.error(errorObject);
-    const response: IHandleErrorOutput = {
+    const errorOutput: IHandleErrorOutput = {
       errorType: 'abort',
-      message: errorObject,
+      error: errorObject,
     };
     if (errorObject.name) {
       if (
         errorObject.name === 'ResourceNotFoundException' ||
         errorObject.name === 'ResourceInUseException'
       ) {
-        response['errorType'] = 'continue';
+        errorOutput['errorType'] = 'continue';
       }
     }
-    return response;
+    return errorOutput;
   }
 }

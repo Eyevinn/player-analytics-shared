@@ -8,18 +8,20 @@ import {
   AttributeValue,
   CreateTableCommandOutput,
   PutItemCommandOutput,
+  GetItemCommandOutput,
+  DeleteItemCommandOutput,
 } from '@aws-sdk/client-dynamodb';
 import { AwsError, mockClient } from 'aws-sdk-client-mock';
 import { DynamoDBAdapter } from '../../adapters/DynamoDBAdapter';
 import Logger from '../../util/logger';
 
-const sqsMock = mockClient(DynamoDBClient);
+const ddbMock = mockClient(DynamoDBClient);
 
 describe('Dynamo DB Adapter', () => {
   beforeEach(() => {
     process.env.AWS_REGION = 'us-east-1';
     process.env.DB_TYPE = 'SQS';
-    sqsMock.reset();
+    ddbMock.reset();
   });
 
   afterEach(() => {
@@ -34,7 +36,7 @@ describe('Dynamo DB Adapter', () => {
       TableNames: mockTables,
     };
     const adapter = new DynamoDBAdapter(Logger);
-    sqsMock.on(ListTablesCommand).resolves(DDBReply);
+    ddbMock.on(ListTablesCommand).resolves(DDBReply);
     const result = await adapter.getTableNames();
     expect(result).toEqual(mockTables);
   });
@@ -49,7 +51,7 @@ describe('Dynamo DB Adapter', () => {
     };
 
     const adapter = new DynamoDBAdapter(Logger);
-    sqsMock.on(CreateTableCommand).resolves(DDBReply);
+    ddbMock.on(CreateTableCommand).resolves(DDBReply);
     const result = await adapter.createTable(tableName);
     expect(result).toEqual(DDBReply);
   });
@@ -66,11 +68,111 @@ describe('Dynamo DB Adapter', () => {
       duration: 0,
       host: 'mock.tenant.mock',
     };
-    sqsMock.on(PutItemCommand).resolves(DDBReply);
+    ddbMock.on(PutItemCommand).resolves(DDBReply);
     const result = await adapter.putItem({
       tableName: 'table_1',
       data: mockEvent,
     });
     expect(result).toEqual({ $metadata: {} });
+  });
+
+  it('should label errorType with "continue" when allowed error occurs', async () => {
+    const DDBReply: AwsError = {
+      Type: 'Sender',
+      Code: 'ResourceNotFoundException',
+      name: 'ResourceNotFoundException',
+      $fault: 'client',
+      $metadata: {
+        httpStatusCode: 400,
+        requestId: 'df840ab9-e68b-5c0e-b4a0-5094f2dfaee8',
+        attempts: 1,
+        totalRetryDelay: 0,
+      },
+    };
+    const adapter = new DynamoDBAdapter(Logger);
+    const mockEvent = {
+      event: 'loading',
+      timestamp: 0,
+      playhead: 0,
+      duration: 0,
+      host: 'mock.tenant.mock',
+    };
+    ddbMock.on(PutItemCommand).rejects(DDBReply);
+    try {
+      const result = await adapter.putItem({
+        tableName: 'table_1',
+        data: mockEvent,
+      });
+    } catch (err) {
+      expect(err.errorType).toEqual('continue');
+      expect(err.error.Code).toEqual('ResourceNotFoundException');
+    }
+  });
+
+  it('should label errorType with "abort" when non-allowed error occurs', async () => {
+    const DDBReply: AwsError = {
+      Type: 'Sender',
+      Code: 'RequestLimitExceeded',
+      name: 'RequestLimitExceeded',
+      $fault: 'client',
+      $metadata: {
+        httpStatusCode: 400,
+        requestId: 'df840ab9-e68b-5c0e-b4a0-5094f2dfaee8',
+        attempts: 1,
+        totalRetryDelay: 0,
+      },
+    };
+    const adapter = new DynamoDBAdapter(Logger);
+    const mockEvent = {
+      event: 'loading',
+      timestamp: 0,
+      playhead: 0,
+      duration: 0,
+      host: 'mock.tenant.mock',
+    };
+    ddbMock.on(PutItemCommand).rejects(DDBReply);
+    try {
+      const result = await adapter.putItem({
+        tableName: 'table_1',
+        data: mockEvent,
+      });
+    } catch (err) {
+      expect(err.errorType).toEqual('abort');
+      expect(err.error.Code).toEqual('RequestLimitExceeded');
+    }
+  });
+
+  it('should get item in database', async () => {
+    const DDBReply: GetItemCommandOutput = {
+      $metadata: {},
+      Item: { eventId: { S: '123-123-123-123' } },
+    };
+    const adapter = new DynamoDBAdapter(Logger);
+    const mockEventId = '123-123-123-123';
+    ddbMock.on(GetItemCommand).resolves(DDBReply);
+    const result = await adapter.getItem({
+      tableName: 'table_1',
+      eventId: mockEventId,
+    });
+    expect(result).toEqual({
+      $metadata: {},
+      Item: { eventId: { S: '123-123-123-123' } },
+    });
+  });
+
+  it('should delete item in database', async () => {
+    const DDBReply: DeleteItemCommandOutput = {
+      $metadata: {},
+    };
+    const adapter = new DynamoDBAdapter(Logger);
+    const mockEventId = '123-123-123-123';
+    ddbMock.on(GetItemCommand).resolves(DDBReply);
+    const result = await adapter.getItem({
+      tableName: 'table_1',
+      eventId: mockEventId,
+    });
+    expect(result).toEqual({
+      $metadata: {},
+    });
   });
 });
