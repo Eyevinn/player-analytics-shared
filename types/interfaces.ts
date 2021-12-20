@@ -7,8 +7,12 @@ export interface EventValidator {
   validateEventList(eventList: Array<Object>): any;
 }
 
+export enum ErrorType {
+  'abort' = 0,
+  'continue' = 1,
+}
 export interface IHandleErrorOutput {
-  errorType: string;
+  errorType: ErrorType;
   error: Object;
 }
 

@@ -13,6 +13,7 @@ import {
   IDDBGetItemInput,
   IDDBPutItemInput,
   IHandleErrorOutput,
+  ErrorType,
 } from '../types/interfaces';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -138,7 +139,7 @@ export class DynamoDBAdapter implements AbstractDBAdapter {
   handleError(errorObject: any): IHandleErrorOutput {
     this.logger.error(errorObject);
     const errorOutput: IHandleErrorOutput = {
-      errorType: 'abort',
+      errorType: ErrorType.abort,
       error: errorObject,
     };
     if (errorObject.name) {
@@ -146,7 +147,7 @@ export class DynamoDBAdapter implements AbstractDBAdapter {
         errorObject.name === 'ResourceNotFoundException' ||
         errorObject.name === 'ResourceInUseException'
       ) {
-        errorOutput['errorType'] = 'continue';
+        errorOutput['errorType'] = ErrorType.continue;
       }
     }
     return errorOutput;
