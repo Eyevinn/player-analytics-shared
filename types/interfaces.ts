@@ -1,4 +1,3 @@
-import { type } from 'os';
 import winston from 'winston';
 
 export interface EventValidator {
@@ -20,6 +19,10 @@ export interface IHandleErrorOutput {
 export interface IDDBPutItemInput {
   tableName: string;
   data: Object;
+}
+export interface IDDBGetItems {
+  sessionId: any;
+  tableName: any;
 }
 export interface IDDBGetItemInput {
   tableName: string;

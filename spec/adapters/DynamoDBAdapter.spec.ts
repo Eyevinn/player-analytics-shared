@@ -203,7 +203,7 @@ describe('Dynamo DB Adapter', () => {
     ddbMock.on(QueryCommand).resolves(DDBReply);
     const result = await adapter.getItemsBySession({
       tableName: 'table_1',
-      eventId: '123-214-234',
+      sessionId: '123-214-234',
     });
     expect(result).toEqual([
       {

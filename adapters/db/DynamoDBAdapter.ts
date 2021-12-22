@@ -13,6 +13,7 @@ import winston from 'winston';
 import {
   AbstractDBAdapter,
   IDDBGetItemInput,
+  IDDBGetItems,
   IDDBPutItemInput,
   IHandleErrorOutput,
   ErrorType,
@@ -139,7 +140,7 @@ export class DynamoDBAdapter implements AbstractDBAdapter {
     }
   }
 
-  async getItemsBySession(params: any): Promise<any> {
+  async getItemsBySession(params: IDDBGetItems): Promise<any> {
     try {
       const queryData: QueryCommandOutput = await this.dbClient.send(
         new QueryCommand({
