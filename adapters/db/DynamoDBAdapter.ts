@@ -6,6 +6,8 @@ import {
   GetItemCommand,
   DeleteItemCommand,
   AttributeValue,
+  QueryCommand,
+  QueryCommandOutput,
 } from '@aws-sdk/client-dynamodb';
 import winston from 'winston';
 import {
@@ -14,8 +16,13 @@ import {
   IDDBPutItemInput,
   IHandleErrorOutput,
   ErrorType,
+  EventItem,
 } from '../../types/interfaces';
 import { v4 as uuidv4 } from 'uuid';
+
+interface ITableItem {
+  [key: string]: AttributeValue;
+}
 
 export class DynamoDBAdapter implements AbstractDBAdapter {
   logger: winston.Logger;
@@ -44,14 +51,22 @@ export class DynamoDBAdapter implements AbstractDBAdapter {
       const params = {
         AttributeDefinitions: [
           {
-            AttributeName: 'eventId',
+            AttributeName: 'sessionId',
+            AttributeType: 'S',
+          },
+          {
+            AttributeName: 'timestamp',
             AttributeType: 'S',
           },
         ],
         KeySchema: [
           {
-            AttributeName: 'eventId',
+            AttributeName: 'sessionId',
             KeyType: 'HASH',
+          },
+          {
+            AttributeName: 'timestamp',
+            KeyType: 'RANGE',
           },
         ],
         ProvisionedThroughput: {
@@ -73,11 +88,7 @@ export class DynamoDBAdapter implements AbstractDBAdapter {
   }
 
   async putItem(params: IDDBPutItemInput): Promise<any> {
-    const eventItem: {
-      [key: string]: AttributeValue;
-    } = {
-      eventId: { S: uuidv4() },
-    };
+    const eventItem: ITableItem = {};
     Object.keys(params.data).forEach((key) => {
       eventItem[key] = { S: JSON.stringify(params.data[key]) };
     });
@@ -90,7 +101,7 @@ export class DynamoDBAdapter implements AbstractDBAdapter {
         })
       );
       this.logger.debug(
-        `Put JSON with event:${eventItem.event['S']}, eventId:${eventItem.eventId['S']} in Table:${params.tableName}`
+        `Put JSON with event:${eventItem.event['S']}, in Table:${params.tableName}`
       );
       return data;
     } catch (err) {
@@ -130,7 +141,32 @@ export class DynamoDBAdapter implements AbstractDBAdapter {
 
   async getItemsBySession(params: any): Promise<any> {
     try {
-      // TODO
+      const queryData: QueryCommandOutput = await this.dbClient.send(
+        new QueryCommand({
+          TableName: params.tableName,
+          KeyConditionExpression: 'sessionId = :sid',
+          ExpressionAttributeValues: { ':sid': params.sessionId },
+        })
+      );
+      if (queryData.Items && queryData.Items.length > 0) {
+        let items: EventItem[] = [];
+        for (let i = 0; i < queryData.Items.length; i++) {
+          const e = queryData.Items[i];
+          let item: EventItem = {
+            event: e.event.S,
+            sessionId: e.sessionId.S,
+            timestamp: e.timestamp.S,
+            duration: e.duration.S ? parseInt(e.duration.S) : -1,
+            playhead: e.playhead.S ? parseInt(e.playhead.S) : -1,
+          };
+          if ('payload' in e) {
+            item['payload'] = e.payload.S ? JSON.parse(e.payload.S) : {};
+          }
+          items[i] = item;
+        }
+        return items;
+      }
+      return [];
     } catch (err) {
       throw this.handleError(err);
     }

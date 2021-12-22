@@ -5,11 +5,12 @@ import {
   DynamoDBClient,
   GetItemCommand,
   DeleteItemCommand,
-  AttributeValue,
   CreateTableCommandOutput,
   PutItemCommandOutput,
   GetItemCommandOutput,
   DeleteItemCommandOutput,
+  QueryCommand,
+  QueryCommandOutput,
 } from '@aws-sdk/client-dynamodb';
 import { AwsError, mockClient } from 'aws-sdk-client-mock';
 import { DynamoDBAdapter } from '../../adapters/db/DynamoDBAdapter';
@@ -137,7 +138,7 @@ describe('Dynamo DB Adapter', () => {
     }
   });
 
-  it('should get item in database', async () => {
+  it('should get item from database', async () => {
     const DDBReply: GetItemCommandOutput = {
       $metadata: {},
       Item: { eventId: { S: '123-123-123-123' } },
@@ -169,5 +170,63 @@ describe('Dynamo DB Adapter', () => {
     expect(result).toEqual({
       $metadata: {},
     });
+  });
+
+  it('should get items from db with a specific sessionId and convert them to valid event objects', async () => {
+    const DDBReply: QueryCommandOutput = {
+      $metadata: {},
+      Items: [
+        {
+          event: { S: 'playing' },
+          sessionId: { S: '123-214-234' },
+          timestamp: { S: '1640191099' },
+          playhead: { S: '1' },
+          duration: { S: '0' },
+        },
+        {
+          event: { S: 'playing' },
+          sessionId: { S: '123-214-234' },
+          timestamp: { S: '1640193099' },
+          playhead: { S: '3' },
+          duration: { S: '0' },
+        },
+        {
+          event: { S: 'paused' },
+          sessionId: { S: '123-214-234' },
+          timestamp: { S: '1640192099' },
+          playhead: { S: '2' },
+          duration: { S: '0' },
+        },
+      ],
+    };
+    const adapter = new DynamoDBAdapter(Logger);
+    ddbMock.on(QueryCommand).resolves(DDBReply);
+    const result = await adapter.getItemsBySession({
+      tableName: 'table_1',
+      eventId: '123-214-234',
+    });
+    expect(result).toEqual([
+      {
+        event: 'playing',
+        sessionId: '123-214-234',
+        timestamp: '1640191099',
+        duration: 0,
+        playhead: 1,
+      },
+      {
+        event: 'playing',
+        sessionId: '123-214-234',
+        timestamp: '1640193099',
+        duration: 0,
+        playhead: 3,
+      },
+      {
+        event: 'paused',
+        sessionId: '123-214-234',
+        timestamp: '1640192099',
+        duration: 0,
+        playhead: 2,
+      },
+    ]);
   });
 });
