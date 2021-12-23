@@ -26,15 +26,8 @@ export interface IDDBGetItems {
 }
 export interface IDDBGetItemInput {
   tableName: string;
-  eventId: string;
-}
-export type EventItem = {
-  event: string | undefined;
-  sessionId: string | undefined;
-  timestamp: string | undefined;
-  payload?: Object;
-  duration: number;
-  playhead: number;
+  sessionId: string;
+  timestamp: number;
 }
 export abstract class AbstractQueueAdapter {
   logger: winston.Logger;

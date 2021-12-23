@@ -144,11 +144,12 @@ describe('Dynamo DB Adapter', () => {
       Item: { eventId: { S: '123-123-123-123' } },
     };
     const adapter = new DynamoDBAdapter(Logger);
-    const mockEventId = '123-123-123-123';
+    const mockId = '123-123-123-123';
     ddbMock.on(GetItemCommand).resolves(DDBReply);
     const result = await adapter.getItem({
       tableName: 'table_1',
-      eventId: mockEventId,
+      sessionId: mockId,
+      timestamp: 0,
     });
     expect(result).toEqual({
       $metadata: {},
@@ -161,11 +162,12 @@ describe('Dynamo DB Adapter', () => {
       $metadata: {},
     };
     const adapter = new DynamoDBAdapter(Logger);
-    const mockEventId = '123-123-123-123';
+    const mockId = '123-123-123-123';
     ddbMock.on(DeleteItemCommand).resolves(DDBReply);
     const result = await adapter.deleteItem({
       tableName: 'table_1',
-      eventId: mockEventId,
+      sessionId: mockId,
+      timestamp: 0,
     });
     expect(result).toEqual({
       $metadata: {},
@@ -179,23 +181,23 @@ describe('Dynamo DB Adapter', () => {
         {
           event: { S: 'playing' },
           sessionId: { S: '123-214-234' },
-          timestamp: { S: '1640191099' },
-          playhead: { S: '1' },
-          duration: { S: '0' },
+          timestamp: { N: '1640191099' },
+          playhead: { N: '1' },
+          duration: { N: '0' },
         },
         {
           event: { S: 'playing' },
           sessionId: { S: '123-214-234' },
-          timestamp: { S: '1640193099' },
-          playhead: { S: '3' },
-          duration: { S: '0' },
+          timestamp: { N: '1640193099' },
+          playhead: { N: '3' },
+          duration: { N: '0' },
         },
         {
           event: { S: 'paused' },
           sessionId: { S: '123-214-234' },
-          timestamp: { S: '1640192099' },
-          playhead: { S: '2' },
-          duration: { S: '0' },
+          timestamp: { N: '1640192099' },
+          playhead: { N: '2' },
+          duration: { N: '0' },
         },
       ],
     };
@@ -209,21 +211,21 @@ describe('Dynamo DB Adapter', () => {
       {
         event: 'playing',
         sessionId: '123-214-234',
-        timestamp: '1640191099',
+        timestamp: 1640191099,
         duration: 0,
         playhead: 1,
       },
       {
         event: 'playing',
         sessionId: '123-214-234',
-        timestamp: '1640193099',
+        timestamp: 1640193099,
         duration: 0,
         playhead: 3,
       },
       {
         event: 'paused',
         sessionId: '123-214-234',
-        timestamp: '1640192099',
+        timestamp: 1640192099,
         duration: 0,
         playhead: 2,
       },
