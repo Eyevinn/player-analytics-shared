@@ -5,7 +5,6 @@ import {
   DynamoDBClient,
   GetItemCommand,
   DeleteItemCommand,
-  AttributeValue,
   QueryCommand,
   QueryCommandInput,
   QueryCommandOutput,
@@ -14,16 +13,12 @@ import { marshall, unmarshall } from '@aws-sdk/util-dynamodb';
 import winston from 'winston';
 import {
   AbstractDBAdapter,
-  IDDBGetItemInput,
-  IDDBGetItems,
-  IDDBPutItemInput,
+  IGetItemInput,
+  IGetItems,
+  IPutItemInput,
   IHandleErrorOutput,
   ErrorType,
 } from '../../types/interfaces';
-
-interface ITableItem {
-  [key: string]: AttributeValue;
-}
 
 export class DynamoDBAdapter implements AbstractDBAdapter {
   logger: winston.Logger;
@@ -88,7 +83,7 @@ export class DynamoDBAdapter implements AbstractDBAdapter {
     }
   }
 
-  async putItem(params: IDDBPutItemInput): Promise<any> {
+  async putItem(params: IPutItemInput): Promise<any> {
     try {
       const data = await this.dbClient.send(
         new PutItemCommand({
@@ -102,7 +97,7 @@ export class DynamoDBAdapter implements AbstractDBAdapter {
     }
   }
 
-  async getItem(params: IDDBGetItemInput): Promise<any> {
+  async getItem(params: IGetItemInput): Promise<any> {
     try {
       const data = await this.dbClient.send(
         new GetItemCommand({
@@ -120,7 +115,7 @@ export class DynamoDBAdapter implements AbstractDBAdapter {
     }
   }
 
-  async deleteItem(params: IDDBGetItemInput): Promise<any> {
+  async deleteItem(params: IGetItemInput): Promise<any> {
     try {
       const data = await this.dbClient.send(
         new DeleteItemCommand({
@@ -138,7 +133,7 @@ export class DynamoDBAdapter implements AbstractDBAdapter {
     }
   }
 
-  async getItemsBySession(params: IDDBGetItems): Promise<any> {
+  async getItemsBySession(params: IGetItems): Promise<any> {
     try {
       const inputData: QueryCommandInput = {
         TableName: params.tableName,
