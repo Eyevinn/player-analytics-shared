@@ -6,7 +6,6 @@ export interface EventValidator {
   validateEvent(event: Object): any;
   validateEventList(eventList: Array<Object>): any;
 }
-
 export enum ErrorType {
   'ABORT' = 0,
   'CONTINUE' = 1,
@@ -15,16 +14,19 @@ export interface IHandleErrorOutput {
   errorType: ErrorType;
   error: Object;
 }
-
-export interface IDDBPutItemInput {
+export interface IPutItemInput {
   tableName: string;
   data: Object;
 }
-export interface IDDBGetItemInput {
+export interface IGetItems {
+  sessionId: string;
   tableName: string;
-  eventId: string;
 }
-
+export interface IGetItemInput {
+  tableName: string;
+  sessionId: string;
+  timestamp: number;
+}
 export abstract class AbstractQueueAdapter {
   logger: winston.Logger;
   client: any;

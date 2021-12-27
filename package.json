@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.44.0",
+    "@aws-sdk/util-dynamodb": "^3.44.0",
     "@aws-sdk/client-sqs": "^3.42.0",
     "@types/jasmine": "^3.10.2",
     "@types/node": "^16.6.1",

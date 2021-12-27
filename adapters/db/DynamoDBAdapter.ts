@@ -5,17 +5,20 @@ import {
   DynamoDBClient,
   GetItemCommand,
   DeleteItemCommand,
-  AttributeValue,
+  QueryCommand,
+  QueryCommandInput,
+  QueryCommandOutput,
 } from '@aws-sdk/client-dynamodb';
+import { marshall, unmarshall } from '@aws-sdk/util-dynamodb';
 import winston from 'winston';
 import {
   AbstractDBAdapter,
-  IDDBGetItemInput,
-  IDDBPutItemInput,
+  IGetItemInput,
+  IGetItems,
+  IPutItemInput,
   IHandleErrorOutput,
   ErrorType,
 } from '../../types/interfaces';
-import { v4 as uuidv4 } from 'uuid';
 
 export class DynamoDBAdapter implements AbstractDBAdapter {
   logger: winston.Logger;
@@ -44,14 +47,22 @@ export class DynamoDBAdapter implements AbstractDBAdapter {
       const params = {
         AttributeDefinitions: [
           {
-            AttributeName: 'eventId',
+            AttributeName: 'sessionId',
             AttributeType: 'S',
+          },
+          {
+            AttributeName: 'timestamp',
+            AttributeType: 'N',
           },
         ],
         KeySchema: [
           {
-            AttributeName: 'eventId',
+            AttributeName: 'sessionId',
             KeyType: 'HASH',
+          },
+          {
+            AttributeName: 'timestamp',
+            KeyType: 'RANGE',
           },
         ],
         ProvisionedThroughput: {
@@ -72,25 +83,13 @@ export class DynamoDBAdapter implements AbstractDBAdapter {
     }
   }
 
-  async putItem(params: IDDBPutItemInput): Promise<any> {
-    const eventItem: {
-      [key: string]: AttributeValue;
-    } = {
-      eventId: { S: uuidv4() },
-    };
-    Object.keys(params.data).forEach((key) => {
-      eventItem[key] = { S: JSON.stringify(params.data[key]) };
-    });
-
+  async putItem(params: IPutItemInput): Promise<any> {
     try {
       const data = await this.dbClient.send(
         new PutItemCommand({
           TableName: params.tableName,
-          Item: eventItem,
+          Item: marshall(params.data),
         })
-      );
-      this.logger.debug(
-        `Put JSON with event:${eventItem.event['S']}, eventId:${eventItem.eventId['S']} in Table:${params.tableName}`
       );
       return data;
     } catch (err) {
@@ -98,27 +97,33 @@ export class DynamoDBAdapter implements AbstractDBAdapter {
     }
   }
 
-  async getItem(params: IDDBGetItemInput): Promise<any> {
+  async getItem(params: IGetItemInput): Promise<any> {
     try {
-      const rawData = await this.dbClient.send(
+      const data = await this.dbClient.send(
         new GetItemCommand({
           TableName: params.tableName,
-          Key: { eventId: { S: params.eventId } },
+          Key: marshall({
+            sessionId: params.sessionId,
+            timestamp: params.timestamp,
+          }),
         })
       );
       this.logger.debug('Read Item from Table');
-      return rawData;
+      return data;
     } catch (err) {
       throw this.handleError(err);
     }
   }
 
-  async deleteItem(params: IDDBGetItemInput): Promise<any> {
+  async deleteItem(params: IGetItemInput): Promise<any> {
     try {
       const data = await this.dbClient.send(
         new DeleteItemCommand({
           TableName: params.tableName,
-          Key: { eventId: { S: params.eventId } },
+          Key: marshall({
+            sessionId: params.sessionId,
+            timestamp: params.timestamp,
+          }),
         })
       );
       this.logger.debug('Deleted Item from Table', data);
@@ -128,9 +133,29 @@ export class DynamoDBAdapter implements AbstractDBAdapter {
     }
   }
 
-  async getItemsBySession(params: any): Promise<any> {
+  async getItemsBySession(params: IGetItems): Promise<any> {
     try {
-      // TODO
+      const inputData: QueryCommandInput = {
+        TableName: params.tableName,
+        KeyConditionExpression: '#sid = :sid',
+        ExpressionAttributeNames: {
+          '#sid': 'sessionId',
+        },
+        ExpressionAttributeValues: marshall({
+          ':sid': params.sessionId,
+        }),
+      };
+      const queryData: QueryCommandOutput = await this.dbClient.send(
+        new QueryCommand(inputData)
+      );
+      if (queryData.Items && queryData.Items.length > 0) {
+        let items: any[] = [];
+        for (let i = 0; i < queryData.Items.length; i++) {
+          items[i] = unmarshall(queryData.Items[i]);
+        }
+        return items;
+      }
+      return [];
     } catch (err) {
       throw this.handleError(err);
     }
