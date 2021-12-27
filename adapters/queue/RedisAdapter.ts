@@ -29,5 +29,6 @@ export class RedisAdapter implements AbstractQueueAdapter {
 
   getEventJSONsFromMessages(body: any[]): Object[] {
     this.logger.warn("Method not implemented.");
+    return body;
   }
 }

@@ -36,5 +36,6 @@ export class BeanstalkdAdapter implements AbstractQueueAdapter {
 
   getEventJSONsFromMessages(body: any[]): Object[] {
     this.logger.warn("Method not implemented.");
+    return body;
   }
 }
