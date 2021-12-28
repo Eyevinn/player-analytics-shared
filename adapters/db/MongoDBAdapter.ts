@@ -20,8 +20,9 @@ export class MongoDBAdapter implements AbstractDBAdapter {
   public async createTable(tableName: string): Promise<any> {
     try {
       const collections = await this.getTableNames();
-      if (collections.includes(tableName)) return true;
-      return await this.dbClient.create(tableName);
+      if (collections.includes(tableName)) return tableName;
+      const res = await this.dbClient.create(tableName);
+      return res.name;
     } catch (error) {
       this.handleError(error);
     }
@@ -48,7 +49,8 @@ export class MongoDBAdapter implements AbstractDBAdapter {
   public async deleteItem({ sessionId, tableName, timestamp }: IGetItemInput): Promise<any> {
     try {
       const collection = await this.dbClient.get(tableName);
-      return await collection.remove({ sessionId: sessionId, timestamp: timestamp });
+      const result = await collection.remove({ sessionId: sessionId, timestamp: timestamp });
+      return !!result.result.ok;
     } catch (error) {
       this.handleError(error);
     }
