@@ -8,7 +8,7 @@ describe('Mongo DB Adapter', () => {
   beforeEach(async () => {
     const collections = await adapter.getTableNames();
     for (const collection of collections) {
-      const c = await adapter.dbClient.get(collection);
+      const c = await adapter.dbClient.db().collection(collection);
       await c.drop();
     }
   });
@@ -16,7 +16,7 @@ describe('Mongo DB Adapter', () => {
   afterAll(async () => {
     const collections = await adapter.getTableNames();
     for (const collection of collections) {
-      const c = await adapter.dbClient.get(collection);
+      const c = await adapter.dbClient.db().collection(collection);
       await c.drop();
     }
     await adapter.dbClient.close();
@@ -56,7 +56,7 @@ describe('Mongo DB Adapter', () => {
       data: mockEvent,
     });
     expect(result).toBeDefined();
-    expect(result.event).toEqual(mockEvent.event);
+    expect(result.acknowledged).toBeTrue();
   });
 
   it('should get item from database', async () => {
