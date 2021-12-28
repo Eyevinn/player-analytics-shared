@@ -2,14 +2,13 @@ import { Logger } from "winston";
 import { AbstractDBAdapter, IHandleErrorOutput, ErrorType, IPutItemInput, IGetItemInput, IGetItems } from "../../types/interfaces";
 import { MongoClient } from "mongodb";
 
-const DB_NAME = "test";
+const DB_NAME = "EPAS";
 
 export class MongoDBAdapter implements AbstractDBAdapter {
   logger: Logger;
   dbClient: MongoClient;
 
   constructor(logger: Logger) {
-    console.log(process.env.MONGODB_URI);
     const connectionString = process.env.MONGODB_URI || "mongodb://localhost";
     this.dbClient = new MongoClient(connectionString);
     this.connect()
