@@ -1,9 +1,16 @@
+import { MongoMemoryServer } from 'mongodb-memory-server';
 import { MongoDBAdapter } from '../../adapters/db/MongoDBAdapter';
-import { ErrorType } from '../../types/interfaces';
 import Logger from '../../util/logger';
 
 describe('Mongo DB Adapter', () => {
-  const adapter = new MongoDBAdapter(Logger);
+  let adapter: MongoDBAdapter;
+  beforeAll(async () => {
+    const instance = await MongoMemoryServer.create();
+    const uri = instance.getUri();
+    (global as any).__MONGOINSTANCE = instance;
+    process.env.MONGODB_URI = uri.slice(0, uri.lastIndexOf('/'));
+    adapter = new MongoDBAdapter(Logger);
+  });
 
   beforeEach(async () => {
     const collections = await adapter.getTableNames();

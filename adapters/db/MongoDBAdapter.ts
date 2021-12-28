@@ -9,6 +9,7 @@ export class MongoDBAdapter implements AbstractDBAdapter {
   dbClient: MongoClient;
 
   constructor(logger: Logger) {
+    console.log(process.env.MONGODB_URI);
     const connectionString = process.env.MONGODB_URI || "mongodb://localhost";
     this.dbClient = new MongoClient(connectionString);
     this.connect()
