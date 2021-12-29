@@ -62,8 +62,7 @@ describe('Mongo DB Adapter', () => {
       tableName: 'test_table_1',
       data: mockEvent,
     });
-    expect(result).toBeDefined();
-    expect(result.acknowledged).toBeTrue();
+    expect(result).toBeTrue();
   });
 
   it('should get item from database', async () => {

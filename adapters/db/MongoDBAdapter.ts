@@ -29,7 +29,7 @@ export class MongoDBAdapter implements AbstractDBAdapter {
     return collections.map((collection) => collection.collectionName);
   }
 
-  public async createTable(tableName: string): Promise<any> {
+  public async createTable(tableName: string): Promise<string> {
     try {
       const collections = await this.getTableNames();
       if (collections.includes(tableName)) return tableName;
@@ -40,11 +40,11 @@ export class MongoDBAdapter implements AbstractDBAdapter {
     }
   }
 
-  public async putItem({ tableName, data }: IPutItemInput): Promise<any> {
+  public async putItem({ tableName, data }: IPutItemInput): Promise<boolean> {
     try {
       const collection = await this.dbClient.db().collection(tableName);
       const result = await collection.insertOne(data);
-      return result;
+      return result.acknowledged;
     } catch (error) {
       throw this.handleError(error);
     }
@@ -60,7 +60,7 @@ export class MongoDBAdapter implements AbstractDBAdapter {
     }
   }
 
-  public async deleteItem({ sessionId, tableName, timestamp }: IGetItemInput): Promise<any> {
+  public async deleteItem({ sessionId, tableName, timestamp }: IGetItemInput): Promise<boolean> {
     try {
       const collection = await this.dbClient.db().collection(tableName);
       const result = await collection.deleteOne({ sessionId: sessionId, timestamp: timestamp });

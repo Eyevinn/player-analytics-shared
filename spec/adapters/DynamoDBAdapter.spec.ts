@@ -49,7 +49,7 @@ describe('Dynamo DB Adapter', () => {
     const adapter = new DynamoDBAdapter(Logger);
     ddbMock.on(CreateTableCommand).resolves(DDBReply);
     const result = await adapter.createTable(tableName);
-    expect(result).toEqual(DDBReply);
+    expect(result).toEqual(DDBReply.TableDescription?.TableName || tableName);
   });
 
   it('should put item to database', async () => {
@@ -69,7 +69,7 @@ describe('Dynamo DB Adapter', () => {
       tableName: 'table_1',
       data: mockEvent,
     });
-    expect(result).toEqual({ $metadata: {} });
+    expect(result).toBeTrue();
   });
 
   it('should label errorType with "continue" when allowed error occurs', async () => {
@@ -159,7 +159,9 @@ describe('Dynamo DB Adapter', () => {
 
   it('should delete item in database', async () => {
     const DDBReply: DeleteItemCommandOutput = {
-      $metadata: {},
+      $metadata: {
+        httpStatusCode: 200,
+      },
     };
     const adapter = new DynamoDBAdapter(Logger);
     const mockId = '123-123-123-123';
@@ -169,9 +171,7 @@ describe('Dynamo DB Adapter', () => {
       sessionId: mockId,
       timestamp: 0,
     });
-    expect(result).toEqual({
-      $metadata: {},
-    });
+    expect(result).toBeTrue();
   });
 
   it('should get items from db with a specific sessionId and convert them to valid event objects', async () => {
