@@ -35,6 +35,6 @@ export abstract class AbstractDBAdapter {
   abstract putItem(params: IPutItemInput): Promise<any>;
   abstract getItem(params: IGetItemInput): Promise<any>;
   abstract deleteItem(params: IGetItemInput): Promise<any>;
-  abstract getItemsBySession(params: IGetItems): Promise<any>;
+  abstract getItemsBySession(params: IGetItems): Promise<any[]>;
   abstract handleError(error: any): IHandleErrorOutput;
 }

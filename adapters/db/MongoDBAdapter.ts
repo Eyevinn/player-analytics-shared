@@ -69,7 +69,7 @@ export class MongoDBAdapter implements AbstractDBAdapter {
       throw this.handleError(error);
     }
   }
-  public async getItemsBySession({ tableName, sessionId }: IGetItems): Promise<any> {
+  public async getItemsBySession({ tableName, sessionId }: IGetItems): Promise<any[]> {
     try {
       const collection = await this.dbClient.db().collection(tableName);
       return await collection.find({ sessionId: sessionId }).toArray();

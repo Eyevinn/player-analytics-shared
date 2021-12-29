@@ -133,7 +133,7 @@ export class DynamoDBAdapter implements AbstractDBAdapter {
     }
   }
 
-  async getItemsBySession(params: IGetItems): Promise<any> {
+  async getItemsBySession(params: IGetItems): Promise<any[]> {
     try {
       const inputData: QueryCommandInput = {
         TableName: params.tableName,
