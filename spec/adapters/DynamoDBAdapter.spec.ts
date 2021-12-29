@@ -54,7 +54,9 @@ describe('Dynamo DB Adapter', () => {
 
   it('should put item to database', async () => {
     const DDBReply: PutItemCommandOutput = {
-      $metadata: {},
+      $metadata: {
+        httpStatusCode: 200,
+      },
     };
     const adapter = new DynamoDBAdapter(Logger);
     const mockEvent = {
