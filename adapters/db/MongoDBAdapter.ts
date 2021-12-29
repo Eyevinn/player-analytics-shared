@@ -36,7 +36,7 @@ export class MongoDBAdapter implements AbstractDBAdapter {
       const res = await this.dbClient.db().createCollection(tableName);
       return res.collectionName;
     } catch (error) {
-      this.handleError(error);
+      throw this.handleError(error);
     }
   }
 
@@ -46,7 +46,7 @@ export class MongoDBAdapter implements AbstractDBAdapter {
       const result = await collection.insertOne(data);
       return result;
     } catch (error) {
-      this.handleError(error);
+      throw this.handleError(error);
     }
   }
 
@@ -56,7 +56,7 @@ export class MongoDBAdapter implements AbstractDBAdapter {
       const result = await collection.findOne({ sessionId: sessionId, timestamp: timestamp });
       return result;
     } catch (error) {
-      this.handleError(error);
+      throw this.handleError(error);
     }
   }
 
@@ -66,7 +66,7 @@ export class MongoDBAdapter implements AbstractDBAdapter {
       const result = await collection.deleteOne({ sessionId: sessionId, timestamp: timestamp });
       return result.acknowledged;
     } catch (error) {
-      this.handleError(error);
+      throw this.handleError(error);
     }
   }
   public async getItemsBySession({ tableName, sessionId }: IGetItems): Promise<any> {
@@ -74,7 +74,7 @@ export class MongoDBAdapter implements AbstractDBAdapter {
       const collection = await this.dbClient.db().collection(tableName);
       return await collection.find({ sessionId: sessionId }).toArray();
     } catch (error) {
-      this.handleError(error);
+      throw this.handleError(error);
     }
   }
 
