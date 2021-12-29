@@ -29,24 +29,24 @@ export class MongoDBAdapter implements AbstractDBAdapter {
     return collections.map((collection) => collection.collectionName);
   }
 
-  public async createTable(tableName: string): Promise<any> {
+  public async createTable(tableName: string): Promise<string> {
     try {
       const collections = await this.getTableNames();
       if (collections.includes(tableName)) return tableName;
       const res = await this.dbClient.db().createCollection(tableName);
       return res.collectionName;
     } catch (error) {
-      this.handleError(error);
+      throw this.handleError(error);
     }
   }
 
-  public async putItem({ tableName, data }: IPutItemInput): Promise<any> {
+  public async putItem({ tableName, data }: IPutItemInput): Promise<boolean> {
     try {
       const collection = await this.dbClient.db().collection(tableName);
       const result = await collection.insertOne(data);
-      return result;
+      return result.acknowledged;
     } catch (error) {
-      this.handleError(error);
+      throw this.handleError(error);
     }
   }
 
@@ -56,25 +56,25 @@ export class MongoDBAdapter implements AbstractDBAdapter {
       const result = await collection.findOne({ sessionId: sessionId, timestamp: timestamp });
       return result;
     } catch (error) {
-      this.handleError(error);
+      throw this.handleError(error);
     }
   }
 
-  public async deleteItem({ sessionId, tableName, timestamp }: IGetItemInput): Promise<any> {
+  public async deleteItem({ sessionId, tableName, timestamp }: IGetItemInput): Promise<boolean> {
     try {
       const collection = await this.dbClient.db().collection(tableName);
       const result = await collection.deleteOne({ sessionId: sessionId, timestamp: timestamp });
       return result.acknowledged;
     } catch (error) {
-      this.handleError(error);
+      throw this.handleError(error);
     }
   }
-  public async getItemsBySession({ tableName, sessionId }: IGetItems): Promise<any> {
+  public async getItemsBySession({ tableName, sessionId }: IGetItems): Promise<any[]> {
     try {
       const collection = await this.dbClient.db().collection(tableName);
       return await collection.find({ sessionId: sessionId }).toArray();
     } catch (error) {
-      this.handleError(error);
+      throw this.handleError(error);
     }
   }
 

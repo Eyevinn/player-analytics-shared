@@ -42,7 +42,7 @@ export class DynamoDBAdapter implements AbstractDBAdapter {
     return [];
   }
 
-  async createTable(tableName: string): Promise<any> {
+  async createTable(tableName: string): Promise<string> {
     try {
       const params = {
         AttributeDefinitions: [
@@ -76,14 +76,14 @@ export class DynamoDBAdapter implements AbstractDBAdapter {
       };
       const data = await this.dbClient.send(new CreateTableCommand(params));
       this.logger.info(`Created Table '${tableName}'`);
-      return data;
+      return data.TableDescription?.TableName || tableName;
     } catch (err) {
       this.logger.error('Table creation Error!');
       throw new Error(err);
     }
   }
 
-  async putItem(params: IPutItemInput): Promise<any> {
+  async putItem(params: IPutItemInput): Promise<boolean> {
     try {
       const data = await this.dbClient.send(
         new PutItemCommand({
@@ -91,7 +91,7 @@ export class DynamoDBAdapter implements AbstractDBAdapter {
           Item: marshall(params.data),
         })
       );
-      return data;
+      return data.$metadata.httpStatusCode === 200;
     } catch (err) {
       throw this.handleError(err);
     }
@@ -115,7 +115,7 @@ export class DynamoDBAdapter implements AbstractDBAdapter {
     }
   }
 
-  async deleteItem(params: IGetItemInput): Promise<any> {
+  async deleteItem(params: IGetItemInput): Promise<boolean> {
     try {
       const data = await this.dbClient.send(
         new DeleteItemCommand({
@@ -127,13 +127,13 @@ export class DynamoDBAdapter implements AbstractDBAdapter {
         })
       );
       this.logger.debug('Deleted Item from Table', data);
-      return data;
+      return data.$metadata.httpStatusCode === 200;
     } catch (err) {
       throw this.handleError(err);
     }
   }
 
-  async getItemsBySession(params: IGetItems): Promise<any> {
+  async getItemsBySession(params: IGetItems): Promise<any[]> {
     try {
       const inputData: QueryCommandInput = {
         TableName: params.tableName,
