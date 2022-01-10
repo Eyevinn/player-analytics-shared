@@ -40,12 +40,12 @@ export class DynamoDBAdapter implements AbstractDBAdapter {
       const tablesData = await this.dbClient.send(new DescribeTableCommand(params));
       if (tablesData['Table'] && tablesData['Table'].TableStatus === 'ACTIVE') return true;
       return false;
-    } catch (err) {
-      if (JSON.stringify(err).indexOf('ResourceNotFoundException')) {
+    } catch (awsError) {
+      if (awsError.name && awsError.name === 'ResourceNotFoundException') {
         return false;
       } else {
-        this.logger.error(err);
-        throw new Error(err);
+        this.logger.error(awsError);
+        throw new Error(awsError);
       }
     }
   }
