@@ -11,6 +11,8 @@ import {
   DeleteItemCommandOutput,
   QueryCommand,
   QueryCommandOutput,
+  DescribeTableCommand,
+  DescribeTableCommandOutput,
 } from '@aws-sdk/client-dynamodb';
 import { AwsError, mockClient } from 'aws-sdk-client-mock';
 import { DynamoDBAdapter } from '../../adapters/db/DynamoDBAdapter';
@@ -25,31 +27,68 @@ describe('Dynamo DB Adapter', () => {
     ddbMock.reset();
   });
 
-  it('should return list of table names in database', async () => {
-    const mockTables = ['table_1', 'table_2', 'table_3'];
-    const DDBReply = {
-      MessageId: '12345678-4444-5555-6666-111122223333',
-      TableNames: mockTables,
+  it('should return true if table exists in database', async () => {
+    const DDBReply: DescribeTableCommandOutput = {
+      Table: {
+        TableArn: 'arn:aws:dynamodb:us-west-2:123456789012:table/mock_table_1',
+        AttributeDefinitions: [
+          {
+            AttributeName: 'sessionId',
+            AttributeType: 'S',
+          },
+          {
+            AttributeName: 'timestamp',
+            AttributeType: 'N',
+          },
+        ],
+        KeySchema: [
+          {
+            AttributeName: 'sessionId',
+            KeyType: 'HASH',
+          },
+          {
+            AttributeName: 'timestamp',
+            KeyType: 'RANGE',
+          },
+        ],
+        LocalSecondaryIndexes: [],
+        ProvisionedThroughput: {
+          NumberOfDecreasesToday: 0,
+          ReadCapacityUnits: 5,
+          WriteCapacityUnits: 5,
+        },
+        TableName: 'mock_table_1',
+        TableSizeBytes: 0,
+        TableStatus: 'ACTIVE',
+      },
+      $metadata: {
+        httpStatusCode: 200,
+        requestId: 'df840ab9-e68b-5c0e-b4a0-5094f2dfaee8',
+      }
     };
     const adapter = new DynamoDBAdapter(Logger);
-    ddbMock.on(ListTablesCommand).resolves(DDBReply);
-    const result = await adapter.getTableNames();
-    expect(result).toEqual(mockTables);
+    ddbMock.on(DescribeTableCommand).resolves(DDBReply);
+    const result = await adapter.tableExists('mock_table_1');
+    expect(result).toEqual(true);
   });
 
-  it('should create a table in database', async () => {
-    const tableName = 'table_1';
-    const DDBReply: CreateTableCommandOutput = {
-      $metadata: {},
-      TableDescription: {
-        TableName: tableName,
+  it('should return false if table does not exists in database', async () => {
+    const DDBReply: AwsError = {
+      Type: 'Sender',
+      Code: 'ResourceNotFoundException',
+      name: 'ResourceNotFoundException',
+      $fault: 'client',
+      $metadata: {
+        httpStatusCode: 400,
+        requestId: 'df840ab9-e68b-5c0e-b4a0-5094f2dfaee8',
+        attempts: 1,
+        totalRetryDelay: 0,
       },
     };
-
     const adapter = new DynamoDBAdapter(Logger);
-    ddbMock.on(CreateTableCommand).resolves(DDBReply);
-    const result = await adapter.createTable(tableName);
-    expect(result).toEqual(DDBReply.TableDescription?.TableName || tableName);
+    ddbMock.on(DescribeTableCommand).resolves(DDBReply);
+    const result = await adapter.tableExists('mock_table_1');
+    expect(result).toEqual(false);
   });
 
   it('should put item to database', async () => {
