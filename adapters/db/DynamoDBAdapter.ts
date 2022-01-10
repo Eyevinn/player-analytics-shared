@@ -8,6 +8,8 @@ import {
   QueryCommand,
   QueryCommandInput,
   QueryCommandOutput,
+  DescribeTableCommand,
+  DescribeTableCommandInput
 } from '@aws-sdk/client-dynamodb';
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb';
 import winston from 'winston';
@@ -32,54 +34,19 @@ export class DynamoDBAdapter implements AbstractDBAdapter {
     this.logger = logger;
   }
 
-  async getTableNames(): Promise<string[]> {
-    const tablesData = await this.dbClient.send(
-      new ListTablesCommand({ Limit: 100 })
-    );
-    if (tablesData.TableNames) {
-      return tablesData.TableNames;
-    }
-    return [];
-  }
-
-  async createTable(tableName: string): Promise<string> {
+  async tableExists(name: string): Promise<boolean> {
     try {
-      const params = {
-        AttributeDefinitions: [
-          {
-            AttributeName: 'sessionId',
-            AttributeType: 'S',
-          },
-          {
-            AttributeName: 'timestamp',
-            AttributeType: 'N',
-          },
-        ],
-        KeySchema: [
-          {
-            AttributeName: 'sessionId',
-            KeyType: 'HASH',
-          },
-          {
-            AttributeName: 'timestamp',
-            KeyType: 'RANGE',
-          },
-        ],
-        ProvisionedThroughput: {
-          ReadCapacityUnits: 3,
-          WriteCapacityUnits: 3,
-        },
-        TableName: tableName,
-        StreamSpecification: {
-          StreamEnabled: false,
-        },
-      };
-      const data = await this.dbClient.send(new CreateTableCommand(params));
-      this.logger.info(`Created Table '${tableName}'`);
-      return data.TableDescription?.TableName || tableName;
+      const params: DescribeTableCommandInput = { TableName: name };
+      const tablesData = await this.dbClient.send(new DescribeTableCommand(params));
+      if (tablesData['Table'] && tablesData['Table'].TableStatus === 'ACTIVE') return true;
+      return false;
     } catch (err) {
-      this.logger.error('Table creation Error!');
-      throw new Error(err);
+      if (JSON.stringify(err).indexOf('ResourceNotFoundException')) {
+        return false;
+      } else {
+        this.logger.error(err);
+        throw new Error(err);
+      }
     }
   }
 
