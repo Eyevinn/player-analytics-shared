@@ -30,8 +30,7 @@ export abstract class AbstractDBAdapter {
   logger: winston.Logger;
   dbClient: any;
 
-  abstract getTableNames(): Promise<string[]>;
-  abstract createTable(name: string): Promise<string>;
+  abstract tableExists(name: string): Promise<boolean>;
   abstract putItem(params: IPutItemInput): Promise<boolean>;
   abstract getItem(params: IGetItemInput): Promise<any>;
   abstract deleteItem(params: IGetItemInput): Promise<boolean>;

@@ -13,15 +13,17 @@ describe('Mongo DB Adapter', () => {
   });
 
   beforeEach(async () => {
-    const collections = await adapter.getTableNames();
+    const collections = await adapter.dbClient.db().collections();
     for (const collection of collections) {
-      const c = await adapter.dbClient.db().collection(collection);
+      const c = await adapter.dbClient
+        .db()
+        .collection(collection.collectionName);
       await c.drop();
     }
   });
 
   afterAll(async () => {
-    const collections = await adapter.getTableNames();
+    const collections = [];
     for (const collection of collections) {
       const c = await adapter.dbClient.db().collection(collection);
       await c.drop();
@@ -29,25 +31,17 @@ describe('Mongo DB Adapter', () => {
     await adapter.dbClient.close();
   });
 
-  it('should return list of table names in database', async () => {
-    const mockTables = ['test_table_1', 'test_table_2'];
-
-    const result = await adapter.getTableNames();
-    expect(result).toEqual([]);
-
-    await adapter.createTable('test_table_1');
-    await adapter.createTable('test_table_2');
-
+  it('should return true if table exists in database', async () => {
+    const res = await adapter.dbClient.db().createCollection('test_table_1');
     setTimeout(async () => {
-      const result = await adapter.getTableNames();
-      expect(result).toEqual(mockTables);
+      const result = await adapter.tableExists('test_table_1');
+      expect(result).toEqual(true);
     }, 1000);
   });
 
-  it('should create a table in database', async () => {
-    const tableName = 'test_table_1';
-    const result = await adapter.createTable(tableName);
-    expect(result).toEqual('test_table_1');
+  it('should return false if table does not exists in database', async () => {
+    const result = await adapter.tableExists('test_table_1');
+    expect(result).toEqual(false);
   });
 
   it('should put item to database', async () => {
@@ -79,7 +73,7 @@ describe('Mongo DB Adapter', () => {
       },
     });
     const result = await adapter.getItem({
-      tableName: "test_table_1",
+      tableName: 'test_table_1',
       sessionId: mockId,
       timestamp: 0,
     });

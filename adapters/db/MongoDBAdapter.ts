@@ -23,21 +23,11 @@ export class MongoDBAdapter implements AbstractDBAdapter {
     await this.dbClient.connect();
   }
 
-  public async getTableNames(): Promise<string[]> {
+  public async tableExists(tableName: string): Promise<boolean> {
     if (!await this.isConnected()) await this.connect();
     const collections = await this.dbClient.db().collections();
-    return collections.map((collection) => collection.collectionName);
-  }
-
-  public async createTable(tableName: string): Promise<string> {
-    try {
-      const collections = await this.getTableNames();
-      if (collections.includes(tableName)) return tableName;
-      const res = await this.dbClient.db().createCollection(tableName);
-      return res.collectionName;
-    } catch (error) {
-      throw this.handleError(error);
-    }
+    const tableNames = collections.map((collection) => collection.collectionName);
+    return tableNames.includes(tableName);
   }
 
   public async putItem({ tableName, data }: IPutItemInput): Promise<boolean> {
