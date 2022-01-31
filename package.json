@@ -7,14 +7,15 @@
   "types": "./build/index.d.ts",
   "scripts": {
     "test": "ts-node node_modules/jasmine/bin/jasmine",
-    "build": "rm -rf build/ && tsc -p tsconfig-build.json"
+    "build": "rm -rf build/ && tsc -p tsconfig-build.json",
+    "postversion": "git push && git push --tags"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Eyevinn/player-analytics-shared.git"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Eyevinn Technology AB (work@eyevinn.se)",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/Eyevinn/player-analytics-shared/issues"
   },
@@ -38,8 +39,5 @@
     "node-beanstalk": "^1.6.7",
     "redis-task-queue": "^0.3.0",
     "winston": "^3.3.3"
-  },
-  "publishConfig": {
-    "@eyevinn:registry": "https://npm.pkg.github.com"
   }
 }
