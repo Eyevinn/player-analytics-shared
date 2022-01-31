@@ -1,8 +1,8 @@
 
-name: Node.js Package
+name: Publish GitHub Package
 on:
   release:
-    types: [created]
+    types: [published]
 jobs:
   publish-gpr:
     runs-on: ubuntu-latest
