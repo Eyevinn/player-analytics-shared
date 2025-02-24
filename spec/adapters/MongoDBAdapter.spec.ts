@@ -13,12 +13,14 @@ describe('Mongo DB Adapter', () => {
   });
 
   beforeEach(async () => {
-    const collections = await adapter.dbClient.db().collections();
-    for (const collection of collections) {
-      const c = await adapter.dbClient
-        .db()
-        .collection(collection.collectionName);
-      await c.drop();
+    if (adapter) {
+      const collections = await adapter.dbClient.db().collections();
+      for (const collection of collections) {
+        const c = await adapter.dbClient
+          .db()
+          .collection(collection.collectionName);
+        await c.drop();
+      }
     }
   });
 
