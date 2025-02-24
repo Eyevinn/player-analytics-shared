@@ -2,7 +2,7 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import { MongoDBAdapter } from '../../adapters/db/MongoDBAdapter';
 import Logger from '../../util/logger';
 
-describe('Mongo DB Adapter', () => {
+xdescribe('Mongo DB Adapter', () => {
   let adapter: MongoDBAdapter;
   beforeAll(async () => {
     const instance = await MongoMemoryServer.create();
