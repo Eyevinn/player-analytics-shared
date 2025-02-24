@@ -24,7 +24,7 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
       region = process.env.AWS_REGION;
     }
     this.logger.info(`SQS Region: ${region}`);
-    this.client = new SQSClient({ region: region });
+    this.client = new SQSClient({ region: region, endpoint: process.env.SQS_ENDPOINT });
   }
 
   async pushToQueue(event: Object): Promise<any> {
