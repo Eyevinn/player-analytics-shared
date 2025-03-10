@@ -40,8 +40,8 @@ export class ClickHouseDBAdapter implements AbstractDBAdapter {
           event String,
           sessionId String,
           timestamp DateTime64(3),
-          playhead Int64,
-          duration Int64,
+          playhead Float64,
+          duration Float64,
           payload String, /* Stored as JSON string */
           
           /* Add derived columns for better query performance */
@@ -72,6 +72,7 @@ export class ClickHouseDBAdapter implements AbstractDBAdapter {
     const item = params.data as EventItem;
 
     // Prepare the item for insertion
+    this.logger.debug(item);
     
     // Convert payload to JSON string if it's an object
     const payload = typeof item.payload === 'object' 
