@@ -42,6 +42,12 @@ export class ClickHouseDBAdapter implements AbstractDBAdapter {
           timestamp DateTime64(3),
           playhead Float64,
           duration Float64,
+          live Boolean,
+          contentId String,
+          userId String,
+          deviceId String,
+          deviceModel String,
+          deviceType String,
           payload String, /* Stored as JSON string */
           
           /* Add derived columns for better query performance */
@@ -80,12 +86,26 @@ export class ClickHouseDBAdapter implements AbstractDBAdapter {
       : item.payload || '';
     
     // Prepare the data for insertion
+    let parsedPayload = {};
+    if (payload) {
+      try {
+        parsedPayload = JSON.parse(payload);
+      } catch (error) {
+        this.logger.warn('Payload not json, skipping parsing');
+      }
+    }
     const data = [{
       event: item.event,
       sessionId: item.sessionId,
       timestamp: item.timestamp,
       playhead: item.playhead || -1,
       duration: item.duration || -1,
+      live: parsedPayload['live'] || false,
+      contentId: parsedPayload['contentId'] || '',
+      userId: parsedPayload['userId'] || '',
+      deviceId: parsedPayload['deviceId'] || '',
+      deviceModel: parsedPayload['deviceModel'] || '',
+      deviceType: parsedPayload['deviceType'] || '',
       payload
     }];
     
