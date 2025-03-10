@@ -29,6 +29,7 @@
     "@aws-sdk/client-dynamodb": "^3.751.0",
     "@aws-sdk/client-sqs": "^3.750.0",
     "@aws-sdk/util-dynamodb": "^3.44.0",
+    "@clickhouse/client": "^1.10.1",
     "@types/jasmine": "^3.10.2",
     "@types/node": "^16.6.1",
     "aws-sdk-client-mock": "^4.1.0",
