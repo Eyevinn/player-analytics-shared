@@ -96,7 +96,7 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
       return receiveMessageResult.Messages;
     } catch (err) {
       this.logger.error(err);
-      return [];
+      throw err;
     }
   }
 
