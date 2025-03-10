@@ -60,9 +60,9 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
     }
   }
 
-  async pullFromQueue(): Promise<any> {
+  async pullFromQueue(): Promise<Message[]> {
     if (process.env.SQS_QUEUE_URL === 'undefined') {
-      return { message: 'SQS_QUEUE_URL is undefined' };
+      throw new Error('SQS_QUEUE_URL is undefined');
     }
     let maxMessages: number = 10;
     if (typeof process.env.SQS_MAX_MESSAGES === 'number') {
@@ -96,7 +96,7 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
       return receiveMessageResult.Messages;
     } catch (err) {
       this.logger.error(err);
-      return err;
+      return [];
     }
   }
 
