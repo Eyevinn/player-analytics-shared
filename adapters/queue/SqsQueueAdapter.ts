@@ -7,6 +7,8 @@ import {
   DeleteMessageCommandInput,
   Message,
   DeleteMessageCommand,
+  paginateListQueues,
+  CreateQueueCommand,
 } from '@aws-sdk/client-sqs';
 import { AbstractQueueAdapter } from '../../types/interfaces';
 import winston from 'winston';
@@ -14,6 +16,8 @@ import winston from 'winston';
 export class SqsQueueAdapter implements AbstractQueueAdapter {
   logger: winston.Logger;
   client: SQSClient;
+  queueUrl: string;
+  queueExists: boolean = false;
 
   constructor(logger: winston.Logger) {
     this.logger = logger;
@@ -23,13 +27,44 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
     } else {
       region = process.env.AWS_REGION;
     }
+    this.queueUrl = process.env.SQS_QUEUE_URL!;
     this.logger.info(`SQS Region: ${region}`);
     this.client = new SQSClient({ region: region, endpoint: process.env.SQS_ENDPOINT });
   }
 
+  private async checkQueueExists(): Promise<boolean> {
+    const paginatedQueues = paginateListQueues({ client: this.client }, {});
+    const queues: string[] = [];
+
+    for await (const page of paginatedQueues) {
+      if (page.QueueUrls?.length) {
+        queues.push(...page.QueueUrls);
+      }
+    }
+    return queues.find((queue) => queue === this.queueUrl) ? true : false;
+  }
+
+  private async createQueue() {
+    const command = new CreateQueueCommand({
+      QueueName: new URL(this.queueUrl).pathname.split('/').pop()
+    });
+    const response = await this.client.send(command);
+    this.logger.info(`Queue created: ${response.QueueUrl} (expected ${this.queueUrl})`);
+  }
+
   async pushToQueue(event: Object): Promise<any> {
-    if (process.env.SQS_QUEUE_URL === 'undefined') {
+    if (this.queueUrl === 'undefined') {
       return { message: 'SQS_QUEUE_URL is undefined' };
+    }
+    if (!this.queueExists) {
+      this.logger.info('Checking if queue exists');
+      if (!(await this.checkQueueExists())) {
+        this.logger.error('Queue does not exist, creating queue');
+        await this.createQueue();
+        this.queueExists = true;
+      } else {
+        this.queueExists = true;
+      }
     }
     const params: SendMessageCommandInput = {
       MessageAttributes: {
