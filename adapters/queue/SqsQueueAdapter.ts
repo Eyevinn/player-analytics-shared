@@ -27,9 +27,6 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
     } else {
       region = process.env.AWS_REGION;
     }
-    if (process.env.SQS_QUEUE_URL === 'undefined') {
-      throw new Error('SQS_QUEUE_URL is undefined');
-    }
     this.queueUrl = process.env.SQS_QUEUE_URL!;
     this.logger.info(`SQS Region: ${region}`);
     this.client = new SQSClient({ region: region, endpoint: process.env.SQS_ENDPOINT });
@@ -56,6 +53,9 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
   }
 
   async pushToQueue(event: Object): Promise<any> {
+    if (this.queueUrl === 'undefined') {
+      return { message: 'SQS_QUEUE_URL is undefined' };
+    }
     if (!this.queueExists) {
       this.logger.info('Checking if queue exists');
       if (!(await this.checkQueueExists())) {

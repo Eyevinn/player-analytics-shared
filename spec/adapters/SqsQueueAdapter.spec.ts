@@ -36,6 +36,8 @@ describe('SQS Queue Adapter', () => {
       playhead: 0,
       duration: 0,
     };
+    // Using any type assertion to bypass TypeScript's type checking on spyOn
+    spyOn(adapter as any, 'checkQueueExists').and.returnValue(true);
     sqsMock.on(SendMessageCommand).resolves(sqsResp);
     const result = await adapter.pushToQueue(event);
     expect(result).toEqual(sqsResp);
@@ -52,6 +54,8 @@ describe('SQS Queue Adapter', () => {
       playhead: 0,
       duration: 0,
     };
+    // Using any type assertion to bypass TypeScript's type checking on spyOn
+    spyOn(adapter as any, 'checkQueueExists').and.returnValue(true);
     sqsMock.on(SendMessageCommand).resolves(sqsResp);
     const result = await adapter.pushToQueue(event);
     expect(result).toEqual(sqsResp);
@@ -139,6 +143,10 @@ describe('SQS Queue Adapter', () => {
     sqsMock.on(ReceiveMessageCommand).rejects(errMsg);
     sqsMock.on(DeleteMessageCommand).rejects(errMsg);
     const queueAdapter = new SqsQueueAdapter(Logger);
+    
+    // Using any type assertion to bypass TypeScript's type checking on spyOn
+    spyOn(queueAdapter as any, 'checkQueueExists').and.returnValue(true);
+
     let pushResult = await queueAdapter.pushToQueue(mockEvent);
     let readResult = await queueAdapter.pullFromQueue();
     let removeResult = await queueAdapter.removeFromQueue(mockSQSMessage);
