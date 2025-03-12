@@ -96,8 +96,18 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
   }
 
   async pullFromQueue(): Promise<any> {
-    if (process.env.SQS_QUEUE_URL === 'undefined') {
+    if (this.queueUrl === 'undefined') {
       return { message: 'SQS_QUEUE_URL is undefined' };
+    }
+    if (!this.queueExists) {
+      this.logger.info('Checking if queue exists');
+      if (!(await this.checkQueueExists())) {
+        this.logger.error('Queue does not exist, creating queue');
+        await this.createQueue();
+        this.queueExists = true;
+      } else {
+        this.queueExists = true;
+      }
     }
     let maxMessages: number = 10;
     if (typeof process.env.SQS_MAX_MESSAGES === 'number') {
