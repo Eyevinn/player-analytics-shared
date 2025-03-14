@@ -85,7 +85,7 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
     const sendMessageCommand = new SendMessageCommand(params);
     try {
       const sendMessageResult = await this.client.send(sendMessageCommand);
-      this.logger.info(
+      this.logger.debug(
         `Response from SQS: ${JSON.stringify(sendMessageResult)}`
       );
       return sendMessageResult;
@@ -128,7 +128,7 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
       const receiveMessageResult = await this.client.send(
         receiveMessageCommand
       );
-      this.logger.info(
+      this.logger.debug(
         `Reserved Messages From SQS Count: ${
           receiveMessageResult.Messages
             ? receiveMessageResult.Messages.length
