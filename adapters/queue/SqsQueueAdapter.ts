@@ -156,7 +156,7 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
     const deleteMessageCommand = new DeleteMessageCommand(params);
     try {
       const deleteMessageResult = await this.client.send(deleteMessageCommand);
-      this.logger.info(
+      this.logger.debug(
         `Response from SQS: ${JSON.stringify(deleteMessageResult)}`
       );
       return deleteMessageResult;
