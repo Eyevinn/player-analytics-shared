@@ -113,6 +113,44 @@ describe('Dynamo DB Adapter', () => {
     expect(result).toBeTrue();
   });
 
+  it('should put multiple items to database in batch', async () => {
+    const DDBReply: PutItemCommandOutput = {
+      $metadata: {
+        httpStatusCode: 200,
+      },
+    };
+    const adapter = new DynamoDBAdapter(Logger);
+    const mockEvents = [
+      {
+        event: 'loading',
+        timestamp: 0,
+        playhead: 0,
+        duration: 0,
+        host: 'mock.tenant.mock',
+      },
+      {
+        event: 'playing',
+        timestamp: 1000,
+        playhead: 1,
+        duration: 60,
+        host: 'mock.tenant.mock',
+      },
+      {
+        event: 'paused',
+        timestamp: 2000,
+        playhead: 2,
+        duration: 60,
+        host: 'mock.tenant.mock',
+      }
+    ];
+    ddbMock.on(PutItemCommand).resolves(DDBReply);
+    const result = await adapter.putItems({
+      tableName: 'table_1',
+      data: mockEvents,
+    });
+    expect(result).toBeTrue();
+  });
+
   it('should label errorType with "continue" when allowed error occurs', async () => {
     const DDBReply: AwsError = {
       Type: 'Sender',

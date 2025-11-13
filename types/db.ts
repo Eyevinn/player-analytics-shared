@@ -15,6 +15,11 @@ export interface IPutItemInput {
   data: Object;
 }
 
+export interface IPutItemsInput {
+  tableName: string;
+  data: Object[];
+}
+
 export interface IGetItems {
   sessionId: string;
   tableName: string;
@@ -32,6 +37,7 @@ export abstract class AbstractDBAdapter {
 
   abstract tableExists(name: string): Promise<boolean>;
   abstract putItem(params: IPutItemInput): Promise<boolean>;
+  abstract putItems(params: IPutItemsInput): Promise<boolean>;
   abstract getItem(params: IGetItemInput): Promise<any>;
   abstract deleteItem(params: IGetItemInput): Promise<boolean>;
   abstract getItemsBySession(params: IGetItems): Promise<any[]>;

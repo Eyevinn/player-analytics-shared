@@ -18,6 +18,7 @@ import {
   IGetItemInput,
   IGetItems,
   IPutItemInput,
+  IPutItemsInput,
   IHandleErrorOutput,
   ErrorType,
 } from '../../types/interfaces';
@@ -59,6 +60,44 @@ export class DynamoDBAdapter implements AbstractDBAdapter {
         })
       );
       return data.$metadata.httpStatusCode === 200;
+    } catch (err) {
+      throw this.handleError(err);
+    }
+  }
+
+  async putItems(params: IPutItemsInput): Promise<boolean> {
+    try {
+      if (!params.data || params.data.length === 0) {
+        this.logger.warn('No items provided for batch insert');
+        return true;
+      }
+
+      this.logger.debug(`Batch inserting ${params.data.length} items into ${params.tableName}`);
+      
+      // DynamoDB batch write has a limit of 25 items per request
+      const batchSize = 25;
+      const batches: Object[][] = [];
+      
+      for (let i = 0; i < params.data.length; i += batchSize) {
+        batches.push(params.data.slice(i, i + batchSize));
+      }
+      
+      // Process all batches
+      for (const batch of batches) {
+        const promises = batch.map(item => 
+          this.dbClient.send(
+            new PutItemCommand({
+              TableName: params.tableName,
+              Item: marshall(item),
+            })
+          )
+        );
+        
+        await Promise.all(promises);
+      }
+      
+      this.logger.debug(`Successfully batch inserted ${params.data.length} items into ${params.tableName}`);
+      return true;
     } catch (err) {
       throw this.handleError(err);
     }
