@@ -1,5 +1,5 @@
 import { createClient } from '@clickhouse/client';
-import { AbstractDBAdapter, ErrorType, IGetItemInput, IGetItems, IHandleErrorOutput, IPutItemInput } from '../../types/interfaces';
+import { AbstractDBAdapter, ErrorType, IGetItemInput, IGetItems, IHandleErrorOutput, IPutItemInput, IPutItemsInput } from '../../types/interfaces';
 import winston from 'winston';
 
 interface EventItem {
@@ -117,6 +117,61 @@ export class ClickHouseDBAdapter implements AbstractDBAdapter {
     });
     
     this.logger.debug(`Successfully inserted item into ${tableName}`);
+    return true;
+  }
+
+  async putItems(params: IPutItemsInput): Promise<boolean> {
+    const tableName = params.tableName;
+    const items = params.data as EventItem[];
+
+    if (!items || items.length === 0) {
+      this.logger.warn('No items provided for batch insert');
+      return true;
+    }
+
+    this.logger.debug(`Batch inserting ${items.length} items into ${tableName}`);
+    
+    // Prepare all items for insertion
+    const data = items.map(item => {
+      // Convert payload to JSON string if it's an object
+      const payload = typeof item.payload === 'object' 
+        ? JSON.stringify(item.payload) 
+        : item.payload || '';
+      
+      // Prepare the data for insertion
+      let parsedPayload = {};
+      if (payload) {
+        try {
+          parsedPayload = JSON.parse(payload);
+        } catch (error) {
+          this.logger.warn('Payload not json, skipping parsing');
+        }
+      }
+
+      return {
+        event: item.event,
+        sessionId: item.sessionId,
+        timestamp: item.timestamp,
+        playhead: item.playhead || -1,
+        duration: item.duration || -1,
+        live: parsedPayload['live'] || false,
+        contentId: parsedPayload['contentId'] || '',
+        userId: parsedPayload['userId'] || '',
+        deviceId: parsedPayload['deviceId'] || '',
+        deviceModel: parsedPayload['deviceModel'] || '',
+        deviceType: parsedPayload['deviceType'] || '',
+        payload
+      };
+    });
+    
+    // Insert all data in a single batch operation
+    await this.dbClient.insert({
+      table: tableName,
+      values: data,
+      format: 'JSONEachRow'
+    });
+    
+    this.logger.debug(`Successfully batch inserted ${items.length} items into ${tableName}`);
     return true;
   }
 

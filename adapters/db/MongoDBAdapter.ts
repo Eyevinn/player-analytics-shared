@@ -1,5 +1,5 @@
 import { Logger } from "winston";
-import { AbstractDBAdapter, IHandleErrorOutput, ErrorType, IPutItemInput, IGetItemInput, IGetItems } from "../../types/interfaces";
+import { AbstractDBAdapter, IHandleErrorOutput, ErrorType, IPutItemInput, IPutItemsInput, IGetItemInput, IGetItems } from "../../types/interfaces";
 import { MongoClient } from "mongodb";
 
 const DB_NAME = "EPAS";
@@ -34,6 +34,25 @@ export class MongoDBAdapter implements AbstractDBAdapter {
     try {
       const collection = await this.dbClient.db().collection(tableName);
       const result = await collection.insertOne(data);
+      return result.acknowledged;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  public async putItems({ tableName, data }: IPutItemsInput): Promise<boolean> {
+    try {
+      if (!data || data.length === 0) {
+        this.logger.warn('No items provided for batch insert');
+        return true;
+      }
+
+      this.logger.debug(`Batch inserting ${data.length} items into ${tableName}`);
+      
+      const collection = await this.dbClient.db().collection(tableName);
+      const result = await collection.insertMany(data);
+      
+      this.logger.debug(`Successfully batch inserted ${data.length} items into ${tableName}`);
       return result.acknowledged;
     } catch (error) {
       throw this.handleError(error);
