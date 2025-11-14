@@ -75,7 +75,7 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
         Time: {
           DataType: 'String',
           StringValue: event['timestamp']
-            ? event['timestamp']
+            ? String(event['timestamp'])
             : new Date().toISOString(),
         },
       },
