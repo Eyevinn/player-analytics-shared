@@ -10,8 +10,13 @@ import {
   paginateListQueues,
   CreateQueueCommand,
 } from '@aws-sdk/client-sqs';
+import { NodeHttpHandler } from '@smithy/node-http-handler';
 import { AbstractQueueAdapter } from '../../types/interfaces';
 import winston from 'winston';
+
+export interface SqsQueueAdapterOptions {
+  maxSockets?: number;
+}
 
 export class SqsQueueAdapter implements AbstractQueueAdapter {
   logger: winston.Logger;
@@ -19,7 +24,7 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
   queueUrl: string;
   queueExists: boolean = false;
 
-  constructor(logger: winston.Logger) {
+  constructor(logger: winston.Logger, options?: SqsQueueAdapterOptions) {
     this.logger = logger;
     let region: any;
     if ('QUEUE_REGION' in process.env) {
@@ -29,7 +34,21 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
     }
     this.queueUrl = process.env.SQS_QUEUE_URL!;
     this.logger.info(`SQS Region: ${region}`);
-    this.client = new SQSClient({ region: region, endpoint: process.env.SQS_ENDPOINT });
+    
+    const clientConfig: any = { 
+      region: region, 
+      endpoint: process.env.SQS_ENDPOINT 
+    };
+    
+    if (options?.maxSockets) {
+      clientConfig.requestHandler = new NodeHttpHandler({
+        httpAgent: { maxSockets: options.maxSockets },
+        httpsAgent: { maxSockets: options.maxSockets }
+      });
+      this.logger.info(`SQS max sockets set to: ${options.maxSockets}`);
+    }
+    
+    this.client = new SQSClient(clientConfig);
   }
 
   private async checkQueueExists(): Promise<boolean> {
