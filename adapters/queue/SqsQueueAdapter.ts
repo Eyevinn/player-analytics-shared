@@ -42,8 +42,8 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
     
     if (options?.maxSockets) {
       clientConfig.requestHandler = new NodeHttpHandler({
-        httpAgent: { maxSockets: options.maxSockets },
-        httpsAgent: { maxSockets: options.maxSockets }
+        httpAgent: { maxSockets: options.maxSockets, keepAlive: true },
+        httpsAgent: { maxSockets: options.maxSockets, keepAlive: true }
       });
       this.logger.info(`SQS max sockets set to: ${options.maxSockets}`);
     }
