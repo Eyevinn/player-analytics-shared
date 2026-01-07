@@ -43,6 +43,12 @@ describe('SQS Queue Adapter', () => {
     expect(result).toEqual(sqsResp);
   });
 
+  it('should create adapter with custom max sockets configuration', async () => {
+    const adapter = new SqsQueueAdapter(Logger, { maxSockets: 100 });
+    expect(adapter).toBeDefined();
+    expect(adapter.client).toBeDefined();
+  });
+
   it('should push to queue if QUEUE_REGION env is set and AWS_REGION is undefined', async () => {
     process.env.QUEUE_REGION = 'eu-north-1';
     process.env.AWS_REGION = undefined;
