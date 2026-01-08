@@ -13,6 +13,8 @@ import {
 import { NodeHttpHandler } from '@smithy/node-http-handler';
 import { AbstractQueueAdapter } from '../../types/interfaces';
 import winston from 'winston';
+import { Agent } from 'http';
+import { Agent as HttpsAgent } from 'https';
 
 export interface SqsQueueAdapterOptions {
   maxSockets?: number;
@@ -23,7 +25,7 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
   client: SQSClient;
   queueUrl: string;
   queueExists: boolean = false;
-  private httpAgent: any = null;
+  private httpAgent: { http?: Agent; https?: HttpsAgent } = {};
 
   constructor(logger: winston.Logger, options?: SqsQueueAdapterOptions) {
     this.logger = logger;
@@ -42,8 +44,14 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
     };
     
     if (options?.maxSockets) {
-      const httpAgent = { maxSockets: options.maxSockets, keepAlive: true };
-      const httpsAgent = { maxSockets: options.maxSockets, keepAlive: true };
+      const httpAgent = new Agent({ 
+        maxSockets: options.maxSockets, 
+        keepAlive: true 
+      });
+      const httpsAgent = new HttpsAgent({ 
+        maxSockets: options.maxSockets, 
+        keepAlive: true 
+      });
       
       clientConfig.requestHandler = new NodeHttpHandler({
         httpAgent,
@@ -78,29 +86,33 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
   }
 
   private getSocketStats(): any {
-    if (!this.httpAgent) {
+    if (!this.httpAgent.http && !this.httpAgent.https) {
       return { message: 'No HTTP agent configured' };
     }
     
     const stats: any = {};
     
     if (this.httpAgent.http) {
+      const agent = this.httpAgent.http as any;
       stats.http = {
-        maxSockets: this.httpAgent.http.maxSockets,
-        keepAlive: this.httpAgent.http.keepAlive,
-        requests: this.httpAgent.http.requests || {},
-        sockets: this.httpAgent.http.sockets || {},
-        freeSockets: this.httpAgent.http.freeSockets || {}
+        maxSockets: agent.maxSockets,
+        keepAlive: agent.keepAlive,
+        totalSocketCount: agent.totalSocketCount || 0,
+        requests: Object.keys(agent.requests || {}).length,
+        sockets: Object.keys(agent.sockets || {}).length,
+        freeSockets: Object.keys(agent.freeSockets || {}).length
       };
     }
     
     if (this.httpAgent.https) {
+      const agent = this.httpAgent.https as any;
       stats.https = {
-        maxSockets: this.httpAgent.https.maxSockets,
-        keepAlive: this.httpAgent.https.keepAlive,
-        requests: this.httpAgent.https.requests || {},
-        sockets: this.httpAgent.https.sockets || {},
-        freeSockets: this.httpAgent.https.freeSockets || {}
+        maxSockets: agent.maxSockets,
+        keepAlive: agent.keepAlive,
+        totalSocketCount: agent.totalSocketCount || 0,
+        requests: Object.keys(agent.requests || {}).length,
+        sockets: Object.keys(agent.sockets || {}).length,
+        freeSockets: Object.keys(agent.freeSockets || {}).length
       };
     }
     
