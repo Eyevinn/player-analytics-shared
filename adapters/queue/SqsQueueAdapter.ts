@@ -23,6 +23,7 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
   client: SQSClient;
   queueUrl: string;
   queueExists: boolean = false;
+  private httpAgent: any = null;
 
   constructor(logger: winston.Logger, options?: SqsQueueAdapterOptions) {
     this.logger = logger;
@@ -41,10 +42,15 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
     };
     
     if (options?.maxSockets) {
+      const httpAgent = { maxSockets: options.maxSockets, keepAlive: true };
+      const httpsAgent = { maxSockets: options.maxSockets, keepAlive: true };
+      
       clientConfig.requestHandler = new NodeHttpHandler({
-        httpAgent: { maxSockets: options.maxSockets, keepAlive: true },
-        httpsAgent: { maxSockets: options.maxSockets, keepAlive: true }
+        httpAgent,
+        httpsAgent
       });
+      
+      this.httpAgent = { http: httpAgent, https: httpsAgent };
       this.logger.info(`SQS max sockets set to: ${options.maxSockets}`);
     }
     
@@ -69,6 +75,36 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
     });
     const response = await this.client.send(command);
     this.logger.info(`Queue created: ${response.QueueUrl} (expected ${this.queueUrl})`);
+  }
+
+  private getSocketStats(): any {
+    if (!this.httpAgent) {
+      return { message: 'No HTTP agent configured' };
+    }
+    
+    const stats: any = {};
+    
+    if (this.httpAgent.http) {
+      stats.http = {
+        maxSockets: this.httpAgent.http.maxSockets,
+        keepAlive: this.httpAgent.http.keepAlive,
+        requests: this.httpAgent.http.requests || {},
+        sockets: this.httpAgent.http.sockets || {},
+        freeSockets: this.httpAgent.http.freeSockets || {}
+      };
+    }
+    
+    if (this.httpAgent.https) {
+      stats.https = {
+        maxSockets: this.httpAgent.https.maxSockets,
+        keepAlive: this.httpAgent.https.keepAlive,
+        requests: this.httpAgent.https.requests || {},
+        sockets: this.httpAgent.https.sockets || {},
+        freeSockets: this.httpAgent.https.freeSockets || {}
+      };
+    }
+    
+    return stats;
   }
 
   async pushToQueue(event: Object): Promise<any> {
@@ -102,13 +138,31 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
       MessageBody: JSON.stringify(event),
     };
     const sendMessageCommand = new SendMessageCommand(params);
+    
+    const startTime = Date.now();
     try {
       const sendMessageResult = await this.client.send(sendMessageCommand);
+      const duration = Date.now() - startTime;
+      
+      if (duration > 2000) {
+        const socketStats = this.getSocketStats();
+        this.logger.warn(
+          `SQS message send took ${duration}ms (>2000ms threshold). Socket stats: ${JSON.stringify(socketStats)}`
+        );
+      }
+      
       this.logger.debug(
         `Response from SQS: ${JSON.stringify(sendMessageResult)}`
       );
       return sendMessageResult;
     } catch (err) {
+      const duration = Date.now() - startTime;
+      if (duration > 2000) {
+        const socketStats = this.getSocketStats();
+        this.logger.warn(
+          `SQS message send failed after ${duration}ms (>2000ms threshold). Socket stats: ${JSON.stringify(socketStats)}`
+        );
+      }
       this.logger.error(err);
       return err;
     }
