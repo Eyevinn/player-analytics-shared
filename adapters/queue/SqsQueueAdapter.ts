@@ -24,6 +24,7 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
   queueUrl: string;
   queueExists: boolean = false;
   private httpAgent: any = null;
+  private requestHandler: NodeHttpHandler | null = null;
 
   constructor(logger: winston.Logger, options?: SqsQueueAdapterOptions) {
     this.logger = logger;
@@ -45,12 +46,13 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
       const httpAgent = { maxSockets: options.maxSockets, keepAlive: true };
       const httpsAgent = { maxSockets: options.maxSockets, keepAlive: true };
       
-      clientConfig.requestHandler = new NodeHttpHandler({
+      this.requestHandler = new NodeHttpHandler({
         httpAgent,
         httpsAgent
       });
       
-      this.httpAgent = { http: httpAgent, https: httpsAgent };
+      clientConfig.requestHandler = this.requestHandler;
+      
       this.logger.info(`SQS max sockets set to: ${options.maxSockets}`);
     }
     
@@ -77,34 +79,41 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
     this.logger.info(`Queue created: ${response.QueueUrl} (expected ${this.queueUrl})`);
   }
 
-  private getSocketStats(): any {
-    if (!this.httpAgent) {
+  private async getSocketStats(): Promise<any> {
+    if (!this.requestHandler) {
       return { message: 'No HTTP agent configured' };
     }
     
-    const stats: any = {};
-    
-    if (this.httpAgent.http) {
-      stats.http = {
-        maxSockets: this.httpAgent.http.maxSockets,
-        keepAlive: this.httpAgent.http.keepAlive,
-        requests: this.httpAgent.http.requests || {},
-        sockets: this.httpAgent.http.sockets || {},
-        freeSockets: this.httpAgent.http.freeSockets || {}
-      };
+    try {
+      const config = await this.requestHandler.configProvider;
+      const stats: any = {};
+      
+      if (config.httpAgent) {
+        stats.http = {
+          maxSockets: config.httpAgent.maxSockets,
+          keepAlive: config.httpAgent.keepAlive,
+          totalSocketCount: config.httpAgent.totalSocketCount,
+          requests: Object.keys(config.httpAgent.requests || {}).length,
+          sockets: Object.keys(config.httpAgent.sockets || {}).length,
+          freeSockets: Object.keys(config.httpAgent.freeSockets || {}).length
+        };
+      }
+      
+      if (config.httpsAgent) {
+        stats.https = {
+          maxSockets: config.httpsAgent.maxSockets,
+          keepAlive: config.httpsAgent.keepAlive,
+          totalSocketCount: config.httpsAgent.totalSocketCount,
+          requests: Object.keys(config.httpsAgent.requests || {}).length,
+          sockets: Object.keys(config.httpsAgent.sockets || {}).length,
+          freeSockets: Object.keys(config.httpsAgent.freeSockets || {}).length
+        };
+      }
+      
+      return stats;
+    } catch (error) {
+      return { error: 'Failed to get socket stats', details: error.message };
     }
-    
-    if (this.httpAgent.https) {
-      stats.https = {
-        maxSockets: this.httpAgent.https.maxSockets,
-        keepAlive: this.httpAgent.https.keepAlive,
-        requests: this.httpAgent.https.requests || {},
-        sockets: this.httpAgent.https.sockets || {},
-        freeSockets: this.httpAgent.https.freeSockets || {}
-      };
-    }
-    
-    return stats;
   }
 
   async pushToQueue(event: Object): Promise<any> {
@@ -145,7 +154,7 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
       const duration = Date.now() - startTime;
       
       if (duration > 2000) {
-        const socketStats = this.getSocketStats();
+        const socketStats = await this.getSocketStats();
         this.logger.warn(
           `SQS message send took ${duration}ms (>2000ms threshold). Socket stats: ${JSON.stringify(socketStats)}`
         );
@@ -158,7 +167,7 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
     } catch (err) {
       const duration = Date.now() - startTime;
       if (duration > 2000) {
-        const socketStats = this.getSocketStats();
+        const socketStats = await this.getSocketStats();
         this.logger.warn(
           `SQS message send failed after ${duration}ms (>2000ms threshold). Socket stats: ${JSON.stringify(socketStats)}`
         );
