@@ -27,6 +27,31 @@ export class RedisAdapter implements AbstractQueueAdapter {
     return result === 'completed';
   }
 
+  async removeFromQueueBatch(messages: Record<string, any>[]): Promise<Object> {
+    const results: { successful: any[]; failed: any[] } = {
+      successful: [],
+      failed: [],
+    };
+
+    for (const message of messages) {
+      try {
+        const success = await this.removeFromQueue(message);
+        if (success) {
+          results.successful.push({ id: message.id });
+        } else {
+          results.failed.push({ id: message.id, reason: 'not completed' });
+        }
+      } catch (err) {
+        results.failed.push({
+          id: message.id,
+          reason: err instanceof Error ? err.message : 'Unknown error',
+        });
+      }
+    }
+
+    return results;
+  }
+
   getEventJSONsFromMessages(body: any[]): Object[] {
     this.logger.warn("Method not implemented.");
     return body;

@@ -13,5 +13,6 @@ export abstract class AbstractQueueAdapter {
   abstract pushToQueue(body: Object): Promise<Object>;
   abstract pullFromQueue(): Promise<Object>;
   abstract removeFromQueue(body: Object): Promise<Object>;
+  abstract removeFromQueueBatch(messages: Object[]): Promise<Object>;
   abstract getEventJSONsFromMessages(body: any[]): Object[];
 }
