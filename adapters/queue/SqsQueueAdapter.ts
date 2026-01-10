@@ -5,6 +5,9 @@ import {
   ReceiveMessageCommandInput,
   ReceiveMessageCommand,
   DeleteMessageCommandInput,
+  DeleteMessageBatchCommand,
+  DeleteMessageBatchCommandInput,
+  DeleteMessageBatchRequestEntry,
   Message,
   DeleteMessageCommand,
   paginateListQueues,
@@ -253,6 +256,66 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
       this.logger.error(JSON.stringify(err));
       return err;
     }
+  }
+
+  async removeFromQueueBatch(messages: Message[]): Promise<any> {
+    if (process.env.SQS_QUEUE_URL === 'undefined') {
+      return { message: 'SQS_QUEUE_URL is undefined' };
+    }
+    if (!messages || messages.length === 0) {
+      return { successful: [], failed: [] };
+    }
+
+    const results: { successful: any[]; failed: any[] } = {
+      successful: [],
+      failed: [],
+    };
+
+    // SQS allows max 10 messages per batch
+    const batchSize = 10;
+    for (let i = 0; i < messages.length; i += batchSize) {
+      const batch = messages.slice(i, i + batchSize);
+      const entries: DeleteMessageBatchRequestEntry[] = batch.map(
+        (msg, index) => ({
+          Id: `${i + index}`,
+          ReceiptHandle: msg.ReceiptHandle!,
+        })
+      );
+
+      const params: DeleteMessageBatchCommandInput = {
+        QueueUrl: process.env.SQS_QUEUE_URL,
+        Entries: entries,
+      };
+
+      const deleteMessageBatchCommand = new DeleteMessageBatchCommand(params);
+      try {
+        const batchResult = await this.client.send(deleteMessageBatchCommand);
+        this.logger.debug(
+          `Batch delete response from SQS: ${JSON.stringify(batchResult)}`
+        );
+        if (batchResult.Successful) {
+          results.successful.push(...batchResult.Successful);
+        }
+        if (batchResult.Failed) {
+          results.failed.push(...batchResult.Failed);
+        }
+      } catch (err) {
+        this.logger.error(`Batch delete error: ${JSON.stringify(err)}`);
+        // Mark all messages in this batch as failed
+        entries.forEach((entry) => {
+          results.failed.push({
+            Id: entry.Id,
+            Code: 'BatchError',
+            Message: err instanceof Error ? err.message : 'Unknown error',
+          });
+        });
+      }
+    }
+
+    this.logger.debug(
+      `Batch remove complete: ${results.successful.length} successful, ${results.failed.length} failed`
+    );
+    return results;
   }
 
   getEventJSONsFromMessages(messages: Message[]): any[] {

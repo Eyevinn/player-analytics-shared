@@ -1,5 +1,6 @@
 import {
   DeleteMessageCommand,
+  DeleteMessageBatchCommand,
   Message,
   ReceiveMessageCommand,
   SendMessageCommand,
@@ -176,5 +177,92 @@ describe('SQS Queue Adapter', () => {
     expect(pushResult.toString()).toEqual(errMsg.Code);
     expect(readResult.toString()).toEqual(errMsg.Code);
     expect(removeResult.toString()).toEqual(errMsg.Code);
+  });
+
+  it('should batch remove messages from queue', async () => {
+    const batchResp = {
+      Successful: [{ Id: '0' }, { Id: '1' }],
+      Failed: [],
+    };
+    sqsMock.on(DeleteMessageBatchCommand).resolves(batchResp);
+    const queueAdapter = new SqsQueueAdapter(Logger, { skipQueueExistsCheck: true });
+    const messages: Message[] = [
+      {
+        MessageId: 'msg-1',
+        ReceiptHandle: 'receipt-1',
+        Body: JSON.stringify({ event: 'loading' }),
+      },
+      {
+        MessageId: 'msg-2',
+        ReceiptHandle: 'receipt-2',
+        Body: JSON.stringify({ event: 'playing' }),
+      },
+    ];
+    const result = await queueAdapter.removeFromQueueBatch(messages);
+    expect(result).toEqual({ successful: batchResp.Successful, failed: [] });
+  });
+
+  it('should handle empty messages array in batch remove', async () => {
+    const queueAdapter = new SqsQueueAdapter(Logger, { skipQueueExistsCheck: true });
+    const result = await queueAdapter.removeFromQueueBatch([]);
+    expect(result).toEqual({ successful: [], failed: [] });
+  });
+
+  it('should not batch remove from queue if sqs queue env is not set', async () => {
+    process.env.SQS_QUEUE_URL = undefined;
+    const queueAdapter = new SqsQueueAdapter(Logger);
+    const messages: Message[] = [
+      {
+        MessageId: 'msg-1',
+        ReceiptHandle: 'receipt-1',
+        Body: JSON.stringify({ event: 'loading' }),
+      },
+    ];
+    const result = await queueAdapter.removeFromQueueBatch(messages);
+    expect(result).toEqual({ message: 'SQS_QUEUE_URL is undefined' });
+  });
+
+  it('should handle batch delete with more than 10 messages', async () => {
+    const batchResp = {
+      Successful: Array.from({ length: 10 }, (_, i) => ({ Id: `${i}` })),
+      Failed: [],
+    };
+    sqsMock.on(DeleteMessageBatchCommand).resolves(batchResp);
+    const queueAdapter = new SqsQueueAdapter(Logger, { skipQueueExistsCheck: true });
+    const messages: Message[] = Array.from({ length: 15 }, (_, i) => ({
+      MessageId: `msg-${i}`,
+      ReceiptHandle: `receipt-${i}`,
+      Body: JSON.stringify({ event: 'loading' }),
+    }));
+    const result: any = await queueAdapter.removeFromQueueBatch(messages);
+    // Should make 2 batch calls (10 + 5 messages)
+    expect(result.successful.length).toBe(20); // 10 from first batch + 10 from second mock response
+  });
+
+  it('should handle batch delete errors', async () => {
+    const errMsg: AwsError = {
+      Type: 'Sender',
+      Code: 'AWS.SimpleQueueService.NonExistentQueue',
+      name: 'AWS.SimpleQueueService.NonExistentQueue',
+      $fault: 'client',
+      $metadata: {
+        httpStatusCode: 400,
+        requestId: 'df840ab9-e68b-5c0e-b4a0-5094f2dfaee8',
+        attempts: 1,
+        totalRetryDelay: 0,
+      },
+    };
+    sqsMock.on(DeleteMessageBatchCommand).rejects(errMsg);
+    const queueAdapter = new SqsQueueAdapter(Logger, { skipQueueExistsCheck: true });
+    const messages: Message[] = [
+      {
+        MessageId: 'msg-1',
+        ReceiptHandle: 'receipt-1',
+        Body: JSON.stringify({ event: 'loading' }),
+      },
+    ];
+    const result: any = await queueAdapter.removeFromQueueBatch(messages);
+    expect(result.failed.length).toBe(1);
+    expect(result.failed[0].Code).toBe('BatchError');
   });
 });
