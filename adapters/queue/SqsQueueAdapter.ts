@@ -18,6 +18,7 @@ import { Agent as HttpsAgent } from 'https';
 
 export interface SqsQueueAdapterOptions {
   maxSockets?: number;
+  skipQueueExistsCheck?: boolean;
 }
 
 export class SqsQueueAdapter implements AbstractQueueAdapter {
@@ -29,6 +30,9 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
 
   constructor(logger: winston.Logger, options?: SqsQueueAdapterOptions) {
     this.logger = logger;
+    if (options?.skipQueueExistsCheck) {
+      this.queueExists = true;
+    }
     let region: any;
     if ('QUEUE_REGION' in process.env) {
       region = process.env.QUEUE_REGION;

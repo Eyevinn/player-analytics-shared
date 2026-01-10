@@ -49,6 +49,23 @@ describe('SQS Queue Adapter', () => {
     expect(adapter.client).toBeDefined();
   });
 
+  it('should skip queue exists check when skipQueueExistsCheck option is set', async () => {
+    const sqsResp = { MessageId: '12345678-4444-5555-6666-111122223333' };
+    const adapter = new SqsQueueAdapter(Logger, { skipQueueExistsCheck: true });
+    expect(adapter.queueExists).toBe(true);
+    const event = {
+      event: 'loading',
+      timestamp: 0,
+      playhead: 0,
+      duration: 0,
+    };
+    const checkQueueExistsSpy = spyOn(adapter as any, 'checkQueueExists');
+    sqsMock.on(SendMessageCommand).resolves(sqsResp);
+    const result = await adapter.pushToQueue(event);
+    expect(result).toEqual(sqsResp);
+    expect(checkQueueExistsSpy).not.toHaveBeenCalled();
+  });
+
   it('should push to queue if QUEUE_REGION env is set and AWS_REGION is undefined', async () => {
     process.env.QUEUE_REGION = 'eu-north-1';
     process.env.AWS_REGION = undefined;
