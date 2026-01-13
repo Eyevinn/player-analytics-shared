@@ -163,10 +163,10 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
       const sendMessageResult = await this.client.send(sendMessageCommand);
       const duration = Date.now() - startTime;
       
-      if (duration > 2000) {
+      if (duration > 5000) {
         const socketStats = this.getSocketStats();
-        this.logger.warn(
-          `SQS message send took ${duration}ms (>2000ms threshold). Socket stats: ${JSON.stringify(socketStats)}`
+        this.logger.debug(
+          `SQS message send took ${duration}ms (>5000ms threshold). Socket stats: ${JSON.stringify(socketStats)}`
         );
       }
       
@@ -176,10 +176,10 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
       return sendMessageResult;
     } catch (err) {
       const duration = Date.now() - startTime;
-      if (duration > 2000) {
+      if (duration > 5000) {
         const socketStats = this.getSocketStats();
         this.logger.warn(
-          `SQS message send failed after ${duration}ms (>2000ms threshold). Socket stats: ${JSON.stringify(socketStats)}`
+          `SQS message send failed after ${duration}ms (>5000ms threshold). Socket stats: ${JSON.stringify(socketStats)}`
         );
       }
       this.logger.error(err);
