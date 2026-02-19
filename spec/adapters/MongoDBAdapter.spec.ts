@@ -2,18 +2,21 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import { MongoDBAdapter } from '../../adapters/db/MongoDBAdapter';
 import Logger from '../../util/logger';
 
-xdescribe('Mongo DB Adapter', () => {
+describe('Mongo DB Adapter', () => {
   let adapter: MongoDBAdapter;
+  let mongoInstance: any;
+
   beforeAll(async () => {
-    const instance = await MongoMemoryServer.create();
-    const uri = instance.getUri();
-    (global as any).__MONGOINSTANCE = instance;
+    mongoInstance = await MongoMemoryServer.create();
+    const uri = mongoInstance.getUri();
     process.env.MONGODB_URI = uri.slice(0, uri.lastIndexOf('/'));
     adapter = new MongoDBAdapter(Logger);
+    // Connect the adapter manually
+    await adapter.dbClient.connect();
   });
 
   beforeEach(async () => {
-    if (adapter) {
+    if (adapter && adapter.dbClient) {
       const collections = await adapter.dbClient.db().collections();
       for (const collection of collections) {
         const c = await adapter.dbClient
@@ -25,20 +28,18 @@ xdescribe('Mongo DB Adapter', () => {
   });
 
   afterAll(async () => {
-    const collections = [];
-    for (const collection of collections) {
-      const c = await adapter.dbClient.db().collection(collection);
-      await c.drop();
+    if (adapter && adapter.dbClient) {
+      await adapter.dbClient.close();
     }
-    await adapter.dbClient.close();
+    if (mongoInstance) {
+      await mongoInstance.stop();
+    }
   });
 
   it('should return true if table exists in database', async () => {
-    const res = await adapter.dbClient.db().createCollection('test_table_1');
-    setTimeout(async () => {
-      const result = await adapter.tableExists('test_table_1');
-      expect(result).toEqual(true);
-    }, 1000);
+    await adapter.dbClient.db().createCollection('test_table_1');
+    const result = await adapter.tableExists('test_table_1');
+    expect(result).toEqual(true);
   });
 
   it('should return false if table does not exists in database', async () => {

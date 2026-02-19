@@ -157,19 +157,19 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
       MessageBody: JSON.stringify(event),
     };
     const sendMessageCommand = new SendMessageCommand(params);
-    
+
     const startTime = Date.now();
     try {
       const sendMessageResult = await this.client.send(sendMessageCommand);
       const duration = Date.now() - startTime;
-      
+
       if (duration > 5000) {
         const socketStats = this.getSocketStats();
         this.logger.debug(
           `SQS message send took ${duration}ms (>5000ms threshold). Socket stats: ${JSON.stringify(socketStats)}`
         );
       }
-      
+
       this.logger.debug(
         `Response from SQS: ${JSON.stringify(sendMessageResult)}`
       );
@@ -183,7 +183,7 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
         );
       }
       this.logger.error(err);
-      return err;
+      throw err;
     }
   }
 
@@ -202,12 +202,14 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
       }
     }
     let maxMessages: number = 10;
-    if (typeof process.env.SQS_MAX_MESSAGES === 'number') {
-      maxMessages = process.env.SQS_MAX_MESSAGES;
+    if (process.env.SQS_MAX_MESSAGES) {
+      maxMessages = parseInt(process.env.SQS_MAX_MESSAGES, 10);
+      if (isNaN(maxMessages)) maxMessages = 10;
     }
     let waitTime: number = 20;
-    if (typeof process.env.SQS_WAIT_TIME === 'number') {
-      waitTime = process.env.SQS_WAIT_TIME;
+    if (process.env.SQS_WAIT_TIME) {
+      waitTime = parseInt(process.env.SQS_WAIT_TIME, 10);
+      if (isNaN(waitTime)) waitTime = 20;
     }
     const params: ReceiveMessageCommandInput = {
       QueueUrl: process.env.SQS_QUEUE_URL,
@@ -233,7 +235,7 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
       return receiveMessageResult.Messages;
     } catch (err) {
       this.logger.error(err);
-      return err;
+      throw err;
     }
   }
 
@@ -254,7 +256,7 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
       return deleteMessageResult;
     } catch (err) {
       this.logger.error(JSON.stringify(err));
-      return err;
+      throw err;
     }
   }
 

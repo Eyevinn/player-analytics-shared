@@ -167,16 +167,13 @@ describe('SQS Queue Adapter', () => {
     sqsMock.on(ReceiveMessageCommand).rejects(errMsg);
     sqsMock.on(DeleteMessageCommand).rejects(errMsg);
     const queueAdapter = new SqsQueueAdapter(Logger);
-    
+
     // Using any type assertion to bypass TypeScript's type checking on spyOn
     spyOn(queueAdapter as any, 'checkQueueExists').and.returnValue(true);
 
-    let pushResult = await queueAdapter.pushToQueue(mockEvent);
-    let readResult = await queueAdapter.pullFromQueue();
-    let removeResult = await queueAdapter.removeFromQueue(mockSQSMessage);
-    expect(pushResult.toString()).toEqual(errMsg.Code);
-    expect(readResult.toString()).toEqual(errMsg.Code);
-    expect(removeResult.toString()).toEqual(errMsg.Code);
+    await expectAsync(queueAdapter.pushToQueue(mockEvent)).toBeRejected();
+    await expectAsync(queueAdapter.pullFromQueue()).toBeRejected();
+    await expectAsync(queueAdapter.removeFromQueue(mockSQSMessage)).toBeRejected();
   });
 
   it('should batch remove messages from queue', async () => {
