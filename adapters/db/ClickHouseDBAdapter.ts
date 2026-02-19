@@ -22,7 +22,15 @@ export class ClickHouseDBAdapter implements AbstractDBAdapter {
     });
   }
 
+  private validateTableName(name: string): boolean {
+    return /^[a-zA-Z0-9_.-]+$/.test(name);
+  }
+
   async tableExists(name: string): Promise<boolean> {
+    if (!this.validateTableName(name)) {
+      this.logger.error(`Invalid table name: ${name}`);
+      return false;
+    }
     try {
       const query = `SELECT 1 FROM system.tables WHERE database = currentDatabase() AND name = '${name}'`;
       const resultSet = await this.dbClient.query({
@@ -79,12 +87,12 @@ export class ClickHouseDBAdapter implements AbstractDBAdapter {
 
     // Prepare the item for insertion
     this.logger.debug(item);
-    
+
     // Convert payload to JSON string if it's an object
-    const payload = typeof item.payload === 'object' 
-      ? JSON.stringify(item.payload) 
+    const payload = typeof item.payload === 'object'
+      ? JSON.stringify(item.payload)
       : item.payload || '';
-    
+
     // Prepare the data for insertion
     let parsedPayload = {};
     if (payload) {
@@ -108,16 +116,21 @@ export class ClickHouseDBAdapter implements AbstractDBAdapter {
       deviceType: parsedPayload['deviceType'] || '',
       payload
     }];
-    
+
     // Insert the data
-    await this.dbClient.insert({
-      table: tableName,
-      values: data,
-      format: 'JSONEachRow'
-    });
-    
-    this.logger.debug(`Successfully inserted item into ${tableName}`);
-    return true;
+    try {
+      await this.dbClient.insert({
+        table: tableName,
+        values: data,
+        format: 'JSONEachRow'
+      });
+
+      this.logger.debug(`Successfully inserted item into ${tableName}`);
+      return true;
+    } catch (err) {
+      this.handleError(err);
+      return false;
+    }
   }
 
   async putItems(params: IPutItemsInput): Promise<boolean> {
@@ -130,14 +143,14 @@ export class ClickHouseDBAdapter implements AbstractDBAdapter {
     }
 
     this.logger.debug(`Batch inserting ${items.length} items into ${tableName}`);
-    
+
     // Prepare all items for insertion
     const data = items.map(item => {
       // Convert payload to JSON string if it's an object
-      const payload = typeof item.payload === 'object' 
-        ? JSON.stringify(item.payload) 
+      const payload = typeof item.payload === 'object'
+        ? JSON.stringify(item.payload)
         : item.payload || '';
-      
+
       // Prepare the data for insertion
       let parsedPayload = {};
       if (payload) {
@@ -163,16 +176,21 @@ export class ClickHouseDBAdapter implements AbstractDBAdapter {
         payload
       };
     });
-    
+
     // Insert all data in a single batch operation
-    await this.dbClient.insert({
-      table: tableName,
-      values: data,
-      format: 'JSONEachRow'
-    });
-    
-    this.logger.debug(`Successfully batch inserted ${items.length} items into ${tableName}`);
-    return true;
+    try {
+      await this.dbClient.insert({
+        table: tableName,
+        values: data,
+        format: 'JSONEachRow'
+      });
+
+      this.logger.debug(`Successfully batch inserted ${items.length} items into ${tableName}`);
+      return true;
+    } catch (err) {
+      this.handleError(err);
+      return false;
+    }
   }
 
   async getItem(params: IGetItemInput): Promise<any> {
