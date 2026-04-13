@@ -90,7 +90,7 @@ export class ClickHouseDBAdapter implements AbstractDBAdapter {
     if (payload) {
       try {
         parsedPayload = JSON.parse(payload);
-      } catch (error) {
+      } catch (_error) {
         this.logger.warn('Payload not json, skipping parsing');
       }
     }
@@ -143,7 +143,7 @@ export class ClickHouseDBAdapter implements AbstractDBAdapter {
       if (payload) {
         try {
           parsedPayload = JSON.parse(payload);
-        } catch (error) {
+        } catch (_error) {
           this.logger.warn('Payload not json, skipping parsing');
         }
       }
@@ -175,15 +175,15 @@ export class ClickHouseDBAdapter implements AbstractDBAdapter {
     return true;
   }
 
-  async getItem(params: IGetItemInput): Promise<any> {
+  async getItem(_params: IGetItemInput): Promise<any> {
     throw new Error('Method not implemented.');
   }
 
-  async deleteItem(params: IGetItemInput): Promise<boolean> {
+  async deleteItem(_params: IGetItemInput): Promise<boolean> {
     throw new Error('Method not implemented.');
   }
 
-  async getItemsBySession(params: IGetItems): Promise<any[]> {
+  async getItemsBySession(_params: IGetItems): Promise<any[]> {
     throw new Error('Method not implemented.');
   }
 

@@ -28,7 +28,7 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
   logger: winston.Logger;
   client: SQSClient;
   queueUrl: string;
-  queueExists: boolean = false;
+  queueExists = false;
   private httpAgent: { http?: Agent; https?: HttpsAgent } = {};
 
   constructor(logger: winston.Logger, options?: SqsQueueAdapterOptions) {
@@ -126,7 +126,7 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
     return stats;
   }
 
-  async pushToQueue(event: Object): Promise<any> {
+  async pushToQueue(event: object): Promise<any> {
     if (this.queueUrl === 'undefined') {
       return { message: 'SQS_QUEUE_URL is undefined' };
     }
@@ -202,7 +202,7 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
       }
     }
     // SQS ReceiveMessage: MaxNumberOfMessages must be 1-10, WaitTimeSeconds must be 0-20
-    let maxMessages: number = 10;
+    let maxMessages = 10;
     if (process.env.SQS_MAX_MESSAGES) {
       const parsed = parseInt(process.env.SQS_MAX_MESSAGES, 10);
       if (isNaN(parsed)) {
@@ -213,7 +213,7 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
         maxMessages = parsed;
       }
     }
-    let waitTime: number = 20;
+    let waitTime = 20;
     if (process.env.SQS_WAIT_TIME) {
       const parsed = parseInt(process.env.SQS_WAIT_TIME, 10);
       if (isNaN(parsed)) {

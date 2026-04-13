@@ -1,11 +1,8 @@
 import {
-  CreateTableCommand,
-  ListTablesCommand,
   PutItemCommand,
   DynamoDBClient,
   GetItemCommand,
   DeleteItemCommand,
-  CreateTableCommandOutput,
   PutItemCommandOutput,
   GetItemCommandOutput,
   DeleteItemCommandOutput,
@@ -174,7 +171,7 @@ describe('Dynamo DB Adapter', () => {
     };
     ddbMock.on(PutItemCommand).rejects(DDBReply);
     try {
-      const result = await adapter.putItem({
+      await adapter.putItem({
         tableName: 'table_1',
         data: mockEvent,
       });
@@ -207,7 +204,7 @@ describe('Dynamo DB Adapter', () => {
     };
     ddbMock.on(PutItemCommand).rejects(DDBReply);
     try {
-      const result = await adapter.putItem({
+      await adapter.putItem({
         tableName: 'table_1',
         data: mockEvent,
       });
