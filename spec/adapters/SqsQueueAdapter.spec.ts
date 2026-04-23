@@ -144,6 +144,63 @@ describe('SQS Queue Adapter', () => {
     expect(call.args[0].input.WaitTimeSeconds).toEqual(20);
   });
 
+  it('should clamp SQS_MAX_MESSAGES above the max (>10) to the default 10', async () => {
+    process.env.SQS_MAX_MESSAGES = '25';
+    const queueAdapter = new SqsQueueAdapter(Logger, { skipQueueExistsCheck: true });
+    sqsMock.on(ReceiveMessageCommand).resolves({ Messages: [] });
+
+    await queueAdapter.pullFromQueue();
+
+    const call = sqsMock.commandCalls(ReceiveMessageCommand)[0];
+    expect(call.args[0].input.MaxNumberOfMessages).toEqual(10);
+  });
+
+  it('should clamp SQS_MAX_MESSAGES below the min (<1) to the default 10', async () => {
+    process.env.SQS_MAX_MESSAGES = '0';
+    const queueAdapter = new SqsQueueAdapter(Logger, { skipQueueExistsCheck: true });
+    sqsMock.on(ReceiveMessageCommand).resolves({ Messages: [] });
+
+    await queueAdapter.pullFromQueue();
+
+    const call = sqsMock.commandCalls(ReceiveMessageCommand)[0];
+    expect(call.args[0].input.MaxNumberOfMessages).toEqual(10);
+  });
+
+  it('should clamp SQS_WAIT_TIME above the max (>20) to the default 20', async () => {
+    process.env.SQS_WAIT_TIME = '60';
+    const queueAdapter = new SqsQueueAdapter(Logger, { skipQueueExistsCheck: true });
+    sqsMock.on(ReceiveMessageCommand).resolves({ Messages: [] });
+
+    await queueAdapter.pullFromQueue();
+
+    const call = sqsMock.commandCalls(ReceiveMessageCommand)[0];
+    expect(call.args[0].input.WaitTimeSeconds).toEqual(20);
+  });
+
+  it('should clamp SQS_WAIT_TIME below the min (<0) to the default 20', async () => {
+    process.env.SQS_WAIT_TIME = '-5';
+    const queueAdapter = new SqsQueueAdapter(Logger, { skipQueueExistsCheck: true });
+    sqsMock.on(ReceiveMessageCommand).resolves({ Messages: [] });
+
+    await queueAdapter.pullFromQueue();
+
+    const call = sqsMock.commandCalls(ReceiveMessageCommand)[0];
+    expect(call.args[0].input.WaitTimeSeconds).toEqual(20);
+  });
+
+  it('should accept boundary values (1, 10 for MaxMessages; 0, 20 for WaitTime)', async () => {
+    process.env.SQS_MAX_MESSAGES = '1';
+    process.env.SQS_WAIT_TIME = '0';
+    const queueAdapter = new SqsQueueAdapter(Logger, { skipQueueExistsCheck: true });
+    sqsMock.on(ReceiveMessageCommand).resolves({ Messages: [] });
+
+    await queueAdapter.pullFromQueue();
+
+    const call = sqsMock.commandCalls(ReceiveMessageCommand)[0];
+    expect(call.args[0].input.MaxNumberOfMessages).toEqual(1);
+    expect(call.args[0].input.WaitTimeSeconds).toEqual(0);
+  });
+
   it('should not remove from queue if sqs queue env is not set', async () => {
     process.env.SQS_QUEUE_URL = undefined;
     const queueAdapter = new SqsQueueAdapter(Logger);
