@@ -29,9 +29,20 @@ import { SqsQueueAdapter } from '@eyevinn/player-analytics-shared';
 | Env Variable | Required | Description |
 |---|---|---|
 | `AWS_REGION` | Yes | AWS region (e.g., `eu-north-1`) |
+| `QUEUE_REGION` | No | Overrides `AWS_REGION` if set |
 | `SQS_QUEUE_URL` | Yes | Full SQS queue URL |
-| `SQS_MAX_SOCKETS` | No | Max HTTP sockets for SQS client |
-| `SKIP_QUEUE_EXISTS_CHECK` | No | Skip queue validation on startup |
+| `SQS_ENDPOINT` | No | Custom SQS endpoint (for local development) |
+| `SQS_MAX_MESSAGES` | No | Max messages to pull per `receiveMessage` call |
+| `SQS_WAIT_TIME` | No | Long-polling wait time in seconds |
+
+**Constructor options:**
+
+```typescript
+new SqsQueueAdapter(logger, {
+  maxSockets: 100,            // HTTP agent max sockets
+  skipQueueExistsCheck: true, // Skip queue validation on startup
+});
+```
 
 ### Redis
 
@@ -116,14 +127,21 @@ import { MongoDBAdapter } from '@eyevinn/player-analytics-shared';
 All queue adapters implement `AbstractQueueAdapter`:
 
 ```typescript
-interface AbstractQueueAdapter {
+abstract class AbstractQueueAdapter {
   pushToQueue(body: Object): Promise<Object>;
   pullFromQueue(): Promise<Object>;
-  removeFromQueue(body: Record<string, any>): Promise<boolean>;
-  removeFromQueueBatch(messages: Record<string, any>[]): Promise<Object>;
+  removeFromQueue(body: Object): Promise<Object | boolean>;
+  removeFromQueueBatch(messages: Object[]): Promise<Object>;
   getEventJSONsFromMessages(body: any[]): Object[];
 }
 ```
+
+**Note on return types:** The abstract class declares `removeFromQueue` as returning `Promise<Object>`, but the concrete adapters differ:
+
+- `SqsQueueAdapter` — returns the AWS SDK `DeleteMessageCommandOutput` (matches `Promise<Object>`)
+- `RedisAdapter` and `BeanstalkdAdapter` — return `Promise<boolean>` (`true` when the job was successfully removed)
+
+If you write code that switches between adapters, treat the result as `Object | boolean` and narrow as needed. A future major release may standardize this.
 
 All database adapters implement `AbstractDBAdapter`:
 
