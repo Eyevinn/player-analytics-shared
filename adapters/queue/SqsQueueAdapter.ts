@@ -202,12 +202,14 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
       }
     }
     let maxMessages: number = 10;
-    if (typeof process.env.SQS_MAX_MESSAGES === 'number') {
-      maxMessages = process.env.SQS_MAX_MESSAGES;
+    if (process.env.SQS_MAX_MESSAGES) {
+      const parsed = parseInt(process.env.SQS_MAX_MESSAGES, 10);
+      if (!isNaN(parsed)) maxMessages = parsed;
     }
     let waitTime: number = 20;
-    if (typeof process.env.SQS_WAIT_TIME === 'number') {
-      waitTime = process.env.SQS_WAIT_TIME;
+    if (process.env.SQS_WAIT_TIME) {
+      const parsed = parseInt(process.env.SQS_WAIT_TIME, 10);
+      if (!isNaN(parsed)) waitTime = parsed;
     }
     const params: ReceiveMessageCommandInput = {
       QueueUrl: process.env.SQS_QUEUE_URL,
