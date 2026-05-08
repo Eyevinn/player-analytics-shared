@@ -201,13 +201,28 @@ export class SqsQueueAdapter implements AbstractQueueAdapter {
         this.queueExists = true;
       }
     }
+    // SQS ReceiveMessage: MaxNumberOfMessages must be 1-10, WaitTimeSeconds must be 0-20
     let maxMessages: number = 10;
-    if (typeof process.env.SQS_MAX_MESSAGES === 'number') {
-      maxMessages = process.env.SQS_MAX_MESSAGES;
+    if (process.env.SQS_MAX_MESSAGES) {
+      const parsed = parseInt(process.env.SQS_MAX_MESSAGES, 10);
+      if (isNaN(parsed)) {
+        this.logger.warn(`SQS_MAX_MESSAGES=${process.env.SQS_MAX_MESSAGES} is not a number, using default 10`);
+      } else if (parsed < 1 || parsed > 10) {
+        this.logger.warn(`SQS_MAX_MESSAGES=${parsed} is out of range [1-10], using default 10`);
+      } else {
+        maxMessages = parsed;
+      }
     }
     let waitTime: number = 20;
-    if (typeof process.env.SQS_WAIT_TIME === 'number') {
-      waitTime = process.env.SQS_WAIT_TIME;
+    if (process.env.SQS_WAIT_TIME) {
+      const parsed = parseInt(process.env.SQS_WAIT_TIME, 10);
+      if (isNaN(parsed)) {
+        this.logger.warn(`SQS_WAIT_TIME=${process.env.SQS_WAIT_TIME} is not a number, using default 20`);
+      } else if (parsed < 0 || parsed > 20) {
+        this.logger.warn(`SQS_WAIT_TIME=${parsed} is out of range [0-20], using default 20`);
+      } else {
+        waitTime = parsed;
+      }
     }
     const params: ReceiveMessageCommandInput = {
       QueueUrl: process.env.SQS_QUEUE_URL,
