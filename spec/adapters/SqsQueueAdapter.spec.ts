@@ -96,14 +96,14 @@ describe('SQS Queue Adapter', () => {
       playhead: 0,
       duration: 0,
     };
-    let result = await queueAdapter.pushToQueue(mockEvent);
+    const result = await queueAdapter.pushToQueue(mockEvent);
     expect(result).toEqual({ message: 'SQS_QUEUE_URL is undefined' });
   });
 
   it('should not read from queue if sqs queue env is not set', async () => {
     process.env.SQS_QUEUE_URL = undefined;
     const queueAdapter = new SqsQueueAdapter(Logger);
-    let result = await queueAdapter.pullFromQueue();
+    const result = await queueAdapter.pullFromQueue();
     expect(result).toEqual({ message: 'SQS_QUEUE_URL is undefined' });
   });
 
@@ -220,7 +220,7 @@ describe('SQS Queue Adapter', () => {
         duration: 0,
       }),
     };
-    let result = await queueAdapter.removeFromQueue(mockSQSMessage);
+    const result = await queueAdapter.removeFromQueue(mockSQSMessage);
     expect(result).toEqual({ message: 'SQS_QUEUE_URL is undefined' });
   });
 
@@ -267,9 +267,9 @@ describe('SQS Queue Adapter', () => {
     // Using any type assertion to bypass TypeScript's type checking on spyOn
     spyOn(queueAdapter as any, 'checkQueueExists').and.returnValue(true);
 
-    let pushResult = await queueAdapter.pushToQueue(mockEvent);
-    let readResult = await queueAdapter.pullFromQueue();
-    let removeResult = await queueAdapter.removeFromQueue(mockSQSMessage);
+    const pushResult = await queueAdapter.pushToQueue(mockEvent);
+    const readResult = await queueAdapter.pullFromQueue();
+    const removeResult = await queueAdapter.removeFromQueue(mockSQSMessage);
     expect(pushResult.toString()).toEqual(errMsg.Code);
     expect(readResult.toString()).toEqual(errMsg.Code);
     expect(removeResult.toString()).toEqual(errMsg.Code);

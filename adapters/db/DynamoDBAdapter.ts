@@ -1,6 +1,4 @@
 import {
-  CreateTableCommand,
-  ListTablesCommand,
   PutItemCommand,
   DynamoDBClient,
   GetItemCommand,
@@ -76,7 +74,7 @@ export class DynamoDBAdapter implements AbstractDBAdapter {
       
       // DynamoDB batch write has a limit of 25 items per request
       const batchSize = 25;
-      const batches: Object[][] = [];
+      const batches: object[][] = [];
       
       for (let i = 0; i < params.data.length; i += batchSize) {
         batches.push(params.data.slice(i, i + batchSize));
@@ -155,7 +153,7 @@ export class DynamoDBAdapter implements AbstractDBAdapter {
         new QueryCommand(inputData)
       );
       if (queryData.Items && queryData.Items.length > 0) {
-        let items: any[] = [];
+        const items: any[] = [];
         for (let i = 0; i < queryData.Items.length; i++) {
           items[i] = unmarshall(queryData.Items[i]);
         }
