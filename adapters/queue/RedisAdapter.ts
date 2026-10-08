@@ -11,12 +11,12 @@ export class RedisAdapter implements AbstractQueueAdapter {
     this.client = new RedisTaskQueue();
   }
 
-  async pushToQueue(body: Object): Promise<Object> {
+  async pushToQueue(body: object): Promise<object> {
     const result = await this.client.add({ data: body });
     return result;
   }
 
-  async pullFromQueue(): Promise<Object> {
+  async pullFromQueue(): Promise<object> {
     const job = await this.client.get();
     return job || {};
   }
@@ -27,7 +27,7 @@ export class RedisAdapter implements AbstractQueueAdapter {
     return result === 'completed';
   }
 
-  async removeFromQueueBatch(messages: Record<string, any>[]): Promise<Object> {
+  async removeFromQueueBatch(messages: Record<string, any>[]): Promise<object> {
     const results: { successful: any[]; failed: any[] } = {
       successful: [],
       failed: [],
@@ -52,7 +52,7 @@ export class RedisAdapter implements AbstractQueueAdapter {
     return results;
   }
 
-  getEventJSONsFromMessages(body: any[]): Object[] {
+  getEventJSONsFromMessages(body: any[]): object[] {
     this.logger.warn("Method not implemented.");
     return body;
   }

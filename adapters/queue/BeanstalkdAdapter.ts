@@ -15,13 +15,13 @@ export class BeanstalkdAdapter implements AbstractQueueAdapter {
     await this.client.connect();
   }
 
-  async pushToQueue(body: Object): Promise<Object> {
+  async pushToQueue(body: object): Promise<object> {
     if (!this.client.isConnected) await this.connect();
     const result = await this.client.put(body);
     return result;
   }
 
-  async pullFromQueue(): Promise<Object> {
+  async pullFromQueue(): Promise<object> {
     if (!this.client.isConnected) await this.connect();
     const job = await this.client.reserveWithTimeout(1);
     return job || {};
@@ -34,7 +34,7 @@ export class BeanstalkdAdapter implements AbstractQueueAdapter {
     return result;
   }
 
-  async removeFromQueueBatch(messages: Record<string, any>[]): Promise<Object> {
+  async removeFromQueueBatch(messages: Record<string, any>[]): Promise<object> {
     const results: { successful: any[]; failed: any[] } = {
       successful: [],
       failed: [],
@@ -59,7 +59,7 @@ export class BeanstalkdAdapter implements AbstractQueueAdapter {
     return results;
   }
 
-  getEventJSONsFromMessages(body: any[]): Object[] {
+  getEventJSONsFromMessages(body: any[]): object[] {
     this.logger.warn("Method not implemented.");
     return body;
   }

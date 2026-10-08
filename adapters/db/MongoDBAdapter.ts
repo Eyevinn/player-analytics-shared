@@ -2,7 +2,7 @@ import { Logger } from "winston";
 import { AbstractDBAdapter, IHandleErrorOutput, ErrorType, IPutItemInput, IPutItemsInput, IGetItemInput, IGetItems } from "../../types/interfaces";
 import { MongoClient } from "mongodb";
 
-const DB_NAME = "EPAS";
+const _DB_NAME = "EPAS";
 
 export class MongoDBAdapter implements AbstractDBAdapter {
   logger: Logger;

@@ -34,7 +34,7 @@ xdescribe('Mongo DB Adapter', () => {
   });
 
   it('should return true if table exists in database', async () => {
-    const res = await adapter.dbClient.db().createCollection('test_table_1');
+    await adapter.dbClient.db().createCollection('test_table_1');
     setTimeout(async () => {
       const result = await adapter.tableExists('test_table_1');
       expect(result).toEqual(true);

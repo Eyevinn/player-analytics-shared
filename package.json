@@ -7,6 +7,7 @@
   "types": "./build/index.d.ts",
   "scripts": {
     "test": "ts-node node_modules/jasmine/bin/jasmine",
+    "lint": "eslint --ext .ts adapters/ spec/ util/ index.ts",
     "build": "rm -rf build/ && tsc -p tsconfig-build.json",
     "postversion": "git push && git push --tags"
   },
@@ -21,7 +22,9 @@
   },
   "homepage": "https://github.com/Eyevinn/player-analytics-shared#readme",
   "devDependencies": {
-    "eslint": "^6.1.3",
+    "@typescript-eslint/eslint-plugin": "^5.62.0",
+    "@typescript-eslint/parser": "^5.62.0",
+    "eslint": "^8.57.1",
     "ts-node": "^10.4.0",
     "typescript": "^4.3.5"
   },
