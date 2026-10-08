@@ -15,6 +15,20 @@ export class ClickHouseDBAdapter implements AbstractDBAdapter {
   logger: winston.Logger;
   dbClient: any;
 
+  // ClickHouse unquoted identifier grammar: start with letter or underscore,
+  // then letters/digits/underscores. Interpolated into DDL/DML strings in
+  // this adapter, so an allowlist is the only defence against injection.
+  private static readonly TABLE_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]{0,127}$/;
+
+  private static validateTableName(name: unknown): asserts name is string {
+    if (typeof name !== 'string' || !ClickHouseDBAdapter.TABLE_NAME_PATTERN.test(name)) {
+      throw new Error(
+        `Invalid ClickHouse table name: ${JSON.stringify(name)}. ` +
+        `Must match ${ClickHouseDBAdapter.TABLE_NAME_PATTERN}.`
+      );
+    }
+  }
+
   constructor(logger: winston.Logger) {
     this.logger = logger;
     this.dbClient = createClient({
@@ -23,6 +37,7 @@ export class ClickHouseDBAdapter implements AbstractDBAdapter {
   }
 
   async tableExists(name: string): Promise<boolean> {
+    ClickHouseDBAdapter.validateTableName(name);
     try {
       const query = `SELECT 1 FROM system.tables WHERE database = currentDatabase() AND name = '${name}'`;
       const resultSet = await this.dbClient.query({
@@ -75,6 +90,7 @@ export class ClickHouseDBAdapter implements AbstractDBAdapter {
 
   async putItem(params: IPutItemInput): Promise<boolean> {
     const tableName = params.tableName;
+    ClickHouseDBAdapter.validateTableName(tableName);
     const item = params.data as EventItem;
 
     // Prepare the item for insertion
@@ -122,6 +138,7 @@ export class ClickHouseDBAdapter implements AbstractDBAdapter {
 
   async putItems(params: IPutItemsInput): Promise<boolean> {
     const tableName = params.tableName;
+    ClickHouseDBAdapter.validateTableName(tableName);
     const items = params.data as EventItem[];
 
     if (!items || items.length === 0) {
