@@ -81,6 +81,121 @@ describe('ClickHouse DB Adapter', () => {
     expect(row.duration).toEqual(-1);
   });
 
+  describe('geo/domain fields (eventsink 0.6.0)', () => {
+    it('putItem maps top-level country, city and domain to row values', async () => {
+      await adapter.putItem({
+        tableName: 'test_table_1',
+        data: {
+          event: 'metadata',
+          sessionId: '123',
+          timestamp: 0,
+          country: 'SE',
+          city: 'Stockholm',
+          domain: 'example.com',
+        },
+      });
+      const row = insertedRow();
+      expect(row.country).toEqual('SE');
+      expect(row.city).toEqual('Stockholm');
+      expect(row.domain).toEqual('example.com');
+    });
+
+    it('putItem defaults missing country/city/domain to empty string', async () => {
+      await adapter.putItem({
+        tableName: 'test_table_1',
+        data: {
+          event: 'playing',
+          sessionId: '123',
+          timestamp: 0,
+        },
+      });
+      const row = insertedRow();
+      expect(row.country).toEqual('');
+      expect(row.city).toEqual('');
+      expect(row.domain).toEqual('');
+    });
+
+    it('putItems maps top-level country, city and domain to row values', async () => {
+      await adapter.putItems({
+        tableName: 'test_table_1',
+        data: [
+          {
+            event: 'metadata',
+            sessionId: '123',
+            timestamp: 0,
+            country: 'NO',
+            city: 'Oslo',
+            domain: 'player.example.org',
+          },
+        ],
+      });
+      const row = insertedRow();
+      expect(row.country).toEqual('NO');
+      expect(row.city).toEqual('Oslo');
+      expect(row.domain).toEqual('player.example.org');
+    });
+
+    it('putItems defaults missing country/city/domain to empty string', async () => {
+      await adapter.putItems({
+        tableName: 'test_table_1',
+        data: [
+          {
+            event: 'playing',
+            sessionId: '123',
+            timestamp: 0,
+          },
+        ],
+      });
+      const row = insertedRow();
+      expect(row.country).toEqual('');
+      expect(row.city).toEqual('');
+      expect(row.domain).toEqual('');
+    });
+  });
+
+  describe('geo/domain column migration (existing tables)', () => {
+    it('issues ADD COLUMN IF NOT EXISTS for country, city and domain when the table already exists', async () => {
+      const querySpy = jasmine
+        .createSpy('query')
+        .and.callFake((_args: any) => ({
+          // tableExists lookup resolves to one row => table already present.
+          json: async () => [{ 1: 1 }],
+        }));
+      adapter.dbClient = { query: querySpy };
+
+      const result = await adapter.tableExists('existing_events');
+      expect(result).toBeTrue();
+
+      const migrationQueries = querySpy.calls
+        .allArgs()
+        .map((args) => args[0].query as string)
+        .filter((q) => q.includes('ALTER TABLE'));
+
+      expect(migrationQueries.length).toEqual(3);
+      expect(migrationQueries[0]).toContain(
+        "ADD COLUMN IF NOT EXISTS country String DEFAULT ''"
+      );
+      expect(migrationQueries[1]).toContain(
+        "ADD COLUMN IF NOT EXISTS city String DEFAULT ''"
+      );
+      expect(migrationQueries[2]).toContain(
+        "ADD COLUMN IF NOT EXISTS domain String DEFAULT ''"
+      );
+      for (const q of migrationQueries) {
+        expect(q).toContain('ALTER TABLE existing_events');
+      }
+    });
+
+    it('does not run the migration for an injection table name', async () => {
+      const querySpy = jasmine.createSpy('query');
+      adapter.dbClient = { query: querySpy };
+      await expectAsync(
+        adapter.tableExists("events'; DROP TABLE events; --")
+      ).toBeRejectedWithError(/Invalid ClickHouse table name/);
+      expect(querySpy).not.toHaveBeenCalled();
+    });
+  });
+
   describe('table-name validation (SQL injection hardening)', () => {
     // The adapter interpolates tableName directly into DDL/DML strings
     // (CREATE TABLE, SELECT ... FROM system.tables), so an allowlist is

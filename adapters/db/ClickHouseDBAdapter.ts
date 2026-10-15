@@ -8,6 +8,12 @@ interface EventItem {
   timestamp: number;
   playhead: number;
   duration: number;
+  // Top-level geo/domain fields added by eventsink 0.6.0: country/city are
+  // derived via geo-IP on metadata events, domain comes from the Origin header.
+  // They are not present on every event, hence optional.
+  country?: string;
+  city?: string;
+  domain?: string;
   payload: string;
 }
 
@@ -47,6 +53,10 @@ export class ClickHouseDBAdapter implements AbstractDBAdapter {
       
       const rows = await resultSet.json();
       if (rows.length > 0) {
+        // Table already exists. CREATE TABLE IF NOT EXISTS would not add any
+        // newly introduced columns, so run the geo/domain migration to bring
+        // pre-existing customer tables up to date without data loss.
+        await this.ensureGeoDomainColumns(name);
         return true;
       } else {
         // Create table if it does not exists
@@ -63,6 +73,9 @@ export class ClickHouseDBAdapter implements AbstractDBAdapter {
           deviceId String,
           deviceModel String,
           deviceType String,
+          country String DEFAULT '',
+          city String DEFAULT '',
+          domain String DEFAULT '',
           payload String, /* Stored as JSON string */
           
           /* Add derived columns for better query performance */
@@ -85,6 +98,21 @@ export class ClickHouseDBAdapter implements AbstractDBAdapter {
       this.logger.error(`Error checking if table '${name}' exists:`);
       this.logger.error(err);
       return false;
+    }
+  }
+
+  /**
+   * Ensure the geo/domain columns introduced by eventsink 0.6.0 exist on an
+   * already-created table. CREATE TABLE IF NOT EXISTS does not alter existing
+   * tables, so ADD COLUMN IF NOT EXISTS is issued per column; it is a no-op
+   * when the column is already present.
+   */
+  private async ensureGeoDomainColumns(name: string): Promise<void> {
+    ClickHouseDBAdapter.validateTableName(name);
+    for (const column of ['country', 'city', 'domain']) {
+      await this.dbClient.query({
+        query: `ALTER TABLE ${name} ADD COLUMN IF NOT EXISTS ${column} String DEFAULT ''`
+      });
     }
   }
 
@@ -122,6 +150,9 @@ export class ClickHouseDBAdapter implements AbstractDBAdapter {
       deviceId: parsedPayload['deviceId'] || '',
       deviceModel: parsedPayload['deviceModel'] || '',
       deviceType: parsedPayload['deviceType'] || '',
+      country: item.country ?? '',
+      city: item.city ?? '',
+      domain: item.domain ?? '',
       payload
     }];
     
@@ -177,6 +208,9 @@ export class ClickHouseDBAdapter implements AbstractDBAdapter {
         deviceId: parsedPayload['deviceId'] || '',
         deviceModel: parsedPayload['deviceModel'] || '',
         deviceType: parsedPayload['deviceType'] || '',
+        country: item.country ?? '',
+        city: item.city ?? '',
+        domain: item.domain ?? '',
         payload
       };
     });
