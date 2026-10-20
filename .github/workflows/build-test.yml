@@ -18,3 +18,39 @@ jobs:
           npm install
           npm run build
           npm test
+
+  clickhouse-integration:
+    # Runs the ClickHouseDBAdapter integration spec against a real ClickHouse
+    # server on both sides of the 26.8 bare-integer-as-seconds change, proving
+    # the ISO-8601 + best_effort timestamp encoding round-trips identically.
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        clickhouse-version: ['24.12', '26.8']
+    services:
+      clickhouse:
+        image: clickhouse/clickhouse-server:${{ matrix.clickhouse-version }}
+        ports:
+          - 8123:8123
+        options: >-
+          --health-cmd "clickhouse-client --query 'SELECT 1'"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js 18.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18.x
+      - name: Install and build
+        run: |
+          npm ci
+          npm install
+          npm run build
+      - name: Run ClickHouse integration tests (ClickHouse ${{ matrix.clickhouse-version }})
+        env:
+          RUN_CLICKHOUSE_INTEGRATION: 'true'
+          CLICKHOUSE_URL: http://localhost:8123
+        run: npm test

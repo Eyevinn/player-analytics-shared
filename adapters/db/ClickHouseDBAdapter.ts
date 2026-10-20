@@ -35,6 +35,22 @@ export class ClickHouseDBAdapter implements AbstractDBAdapter {
     }
   }
 
+  // The EPAS wire timestamp is epoch milliseconds (Date.now()). Sending it as a
+  // bare JSON integer into a DateTime64(3) column is ambiguous: up to ClickHouse
+  // 26.7 it was read as raw ticks (ms, correct), but from 26.8 a bare number is
+  // read as Unix *seconds* (setting input_format_read_datetime_number_as_raw_value
+  // defaults to 0), so millisecond values overflow to 9999-12-31. Sending an
+  // explicit ISO-8601 UTC string plus date_time_input_format: 'best_effort' is
+  // parsed identically on both 24.x and 26.x, keeping the stored instant stable
+  // regardless of ClickHouse version. The trailing Z makes it timezone-independent.
+  private static readonly INSERT_SETTINGS = {
+    date_time_input_format: 'best_effort'
+  } as const;
+
+  private static toClickHouseDateTime(ms: number): string {
+    return new Date(ms).toISOString();
+  }
+
   constructor(logger: winston.Logger) {
     this.logger = logger;
     this.dbClient = createClient({
@@ -141,7 +157,7 @@ export class ClickHouseDBAdapter implements AbstractDBAdapter {
     const data = [{
       event: item.event,
       sessionId: item.sessionId,
-      timestamp: item.timestamp,
+      timestamp: ClickHouseDBAdapter.toClickHouseDateTime(item.timestamp),
       playhead: item.playhead ?? -1,
       duration: item.duration ?? -1,
       live: parsedPayload['live'] || false,
@@ -160,9 +176,10 @@ export class ClickHouseDBAdapter implements AbstractDBAdapter {
     await this.dbClient.insert({
       table: tableName,
       values: data,
-      format: 'JSONEachRow'
+      format: 'JSONEachRow',
+      clickhouse_settings: ClickHouseDBAdapter.INSERT_SETTINGS
     });
-    
+
     this.logger.debug(`Successfully inserted item into ${tableName}`);
     return true;
   }
@@ -199,7 +216,7 @@ export class ClickHouseDBAdapter implements AbstractDBAdapter {
       return {
         event: item.event,
         sessionId: item.sessionId,
-        timestamp: item.timestamp,
+        timestamp: ClickHouseDBAdapter.toClickHouseDateTime(item.timestamp),
         playhead: item.playhead ?? -1,
         duration: item.duration ?? -1,
         live: parsedPayload['live'] || false,
@@ -219,9 +236,10 @@ export class ClickHouseDBAdapter implements AbstractDBAdapter {
     await this.dbClient.insert({
       table: tableName,
       values: data,
-      format: 'JSONEachRow'
+      format: 'JSONEachRow',
+      clickhouse_settings: ClickHouseDBAdapter.INSERT_SETTINGS
     });
-    
+
     this.logger.debug(`Successfully batch inserted ${items.length} items into ${tableName}`);
     return true;
   }
