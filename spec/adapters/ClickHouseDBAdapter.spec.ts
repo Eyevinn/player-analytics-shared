@@ -17,6 +17,8 @@ describe('ClickHouse DB Adapter', () => {
     return call.args[0].values[0];
   };
 
+  const insertedArgs = (): any => insertSpy.calls.mostRecent().args[0];
+
   it('putItem should preserve playhead: 0 and duration: 0 (not -1)', async () => {
     await adapter.putItem({
       tableName: 'test_table_1',
@@ -79,6 +81,50 @@ describe('ClickHouse DB Adapter', () => {
     const row = insertedRow();
     expect(row.playhead).toEqual(-1);
     expect(row.duration).toEqual(-1);
+  });
+
+  describe('timestamp encoding (ClickHouse >= 26.8 bare-integer regression)', () => {
+    // Regression guard: a bare epoch-ms integer is read as Unix seconds from
+    // ClickHouse 26.8, overflowing DateTime64(3) to 9999-12-31. The adapter must
+    // instead send an explicit ISO-8601 UTC string and request best_effort
+    // datetime parsing so both 24.x and 26.x store the same instant.
+    const MS = Date.UTC(2026, 9, 19, 10, 0, 0, 123); // 2026-10-19T10:00:00.123Z
+
+    it('putItem sends timestamp as an ISO-8601 UTC string', async () => {
+      await adapter.putItem({
+        tableName: 'test_table_1',
+        data: { event: 'playing', sessionId: '123', timestamp: MS },
+      });
+      expect(insertedRow().timestamp).toEqual('2026-10-19T10:00:00.123Z');
+    });
+
+    it('putItem passes date_time_input_format: best_effort to insert()', async () => {
+      await adapter.putItem({
+        tableName: 'test_table_1',
+        data: { event: 'playing', sessionId: '123', timestamp: MS },
+      });
+      expect(insertedArgs().clickhouse_settings).toEqual({
+        date_time_input_format: 'best_effort',
+      });
+    });
+
+    it('putItems sends timestamp as an ISO-8601 UTC string', async () => {
+      await adapter.putItems({
+        tableName: 'test_table_1',
+        data: [{ event: 'playing', sessionId: '123', timestamp: MS }],
+      });
+      expect(insertedRow().timestamp).toEqual('2026-10-19T10:00:00.123Z');
+    });
+
+    it('putItems passes date_time_input_format: best_effort to insert()', async () => {
+      await adapter.putItems({
+        tableName: 'test_table_1',
+        data: [{ event: 'playing', sessionId: '123', timestamp: MS }],
+      });
+      expect(insertedArgs().clickhouse_settings).toEqual({
+        date_time_input_format: 'best_effort',
+      });
+    });
   });
 
   describe('geo/domain fields (eventsink 0.6.0)', () => {
